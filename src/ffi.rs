@@ -1,8 +1,39 @@
-// use libc::{self, uid_t, gid_t};
-use libc::{self, gid_t};
+use libc::{self, uid_t, gid_t};
 use errno::errno;
 
 use Error;
+
+
+pub fn getresuid() -> Result<(uid_t, uid_t, uid_t), Error> {
+    let mut ruid: uid_t = 0;
+    let mut euid: uid_t = 0;
+    let mut suid: uid_t = 0;
+
+    let ret = unsafe { libc::getresuid(&mut ruid, &mut euid, &mut suid) };
+
+    if ret != 0 {
+        let err = errno();
+        Err(Error::Errno(err))
+    } else {
+        Ok((ruid, euid, suid))
+    }
+}
+
+
+pub fn getresgid() -> Result<(gid_t, gid_t, gid_t), Error> {
+    let mut rgid: gid_t = 0;
+    let mut egid: gid_t = 0;
+    let mut sgid: gid_t = 0;
+
+    let ret = unsafe { libc::getresgid(&mut rgid, &mut egid, &mut sgid) };
+
+    if ret != 0 {
+        let err = errno();
+        Err(Error::Errno(err))
+    } else {
+        Ok((rgid, egid, sgid))
+    }
+}
 
 
 pub fn getgroups() -> Result<Vec<gid_t>, Error> {
@@ -35,3 +66,28 @@ pub fn setgroups(groups: Vec<gid_t>) -> Result<(), Error> {
 }
 
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use libc;
+
+    #[test]
+    fn test_getresuid() {
+        let ruid1 = unsafe { libc::getuid() };
+        let euid1 = unsafe { libc::geteuid() };
+
+        let (ruid2, euid2, _) = getresuid().unwrap();
+
+        assert_eq!((ruid1, euid1), (ruid2, euid2));
+    }
+
+    #[test]
+    fn test_getresgid() {
+        let rgid1 = unsafe { libc::getgid() };
+        let egid1 = unsafe { libc::getegid() };
+
+        let (rgid2, egid2, _) = getresgid().unwrap();
+
+        assert_eq!((rgid1, egid1), (rgid2, egid2));
+    }
+}
