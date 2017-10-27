@@ -1,4 +1,11 @@
-# boxxy-rs
+# boxxy-rs [![Build Status][travis-img]][travis] [![crates.io][crates-img]][crates] [![docs.rs][docs-img]][docs]
+
+[travis-img]:   https://travis-ci.org/kpcyrd/boxxy-rs.svg?branch=master
+[travis]:       https://travis-ci.org/kpcyrd/boxxy-rs
+[crates-img]:   https://img.shields.io/crates/v/boxxy.svg
+[crates]:       https://crates.io/crates/boxxy
+[docs-img]:     https://docs.rs/boxxy/badge.svg
+[docs]:         https://docs.rs/boxxy
 
 "_If you implement boundaries and nobody is around to push them, do they even
 exist?_". Have you ever wondered how your sandbox looks like from the inside?
