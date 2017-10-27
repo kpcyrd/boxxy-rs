@@ -12,7 +12,7 @@ exist?_". Have you ever wondered how your sandbox looks like from the inside?
 Tempted to test if you can escape it, if only you had a shell to give it a try?
 boxxy is a library that can be linked into a debug build of an existing program
 and drop you into an interactive shell. From there you can step through various
-stages of you sandbox and verify it actually contains™.
+stages of your sandbox and verify it actually contains™.
 
 ## Development
 
@@ -35,7 +35,7 @@ There is an example program, check the Makefile to see how it's built.
 ## Examples
 
 There are vulnerable sandboxes (`examples/vuln-*`) as a challenge that can be
-exploited using the boxxy shell (no need to compile anything).
+exploited using the boxxy shell (no need to compile any exploits).
 
 **DO NOT POST SPOILERS**
 
