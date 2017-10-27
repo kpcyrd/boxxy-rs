@@ -87,21 +87,22 @@ impl Toolbox {
     pub fn new() -> Toolbox {
         let mut toolbox = Toolbox::empty();
         toolbox.insert_many(vec![
-            ("cat"           , busybox::cat),
-            ("cd"            , busybox::cd),
-            ("chroot"        , busybox::chroot),
-            ("echo"          , busybox::echo),
-            ("exec"          , busybox::exec),
-            ("grep"          , busybox::grep),
-            ("ls"            , busybox::ls),
-            ("mount"         , busybox::mount),
-            ("id"            , busybox::id),
-            ("pwd"           , busybox::pwd),
-            ("setgroups"     , busybox::setgroups),
-            ("setgid"        , busybox::setgid),
-            ("setuid"        , busybox::setuid),
-            ("seteuid"       , busybox::seteuid),
-            ("setreuid"      , busybox::setreuid),
+            ("cat"          , busybox::cat),
+            ("cd"           , busybox::cd),
+            ("chroot"       , busybox::chroot),
+            ("echo"         , busybox::echo),
+            ("exec"         , busybox::exec),
+            ("grep"         , busybox::grep),
+            ("ls"           , busybox::ls),
+            ("mkdir"        , busybox::mkdir),
+            ("mount"        , busybox::mount),
+            ("id"           , busybox::id),
+            ("pwd"          , busybox::pwd),
+            ("setgroups"    , busybox::setgroups),
+            ("setgid"       , busybox::setgid),
+            ("setuid"       , busybox::setuid),
+            ("seteuid"      , busybox::seteuid),
+            ("setreuid"     , busybox::setreuid),
         ]);
         toolbox
     }
