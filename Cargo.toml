@@ -1,0 +1,27 @@
+[package]
+name = "boxxy"
+version = "0.1.0"
+description = "Linkable sandbox explorer"
+authors = ["kpcyrd <git@rxv.cc>"]
+license = "LGPL-3.0"
+repository = "https://github.com/kpcyrd/boxxy-rs"
+categories = ["command-line-interface", "development-tools::debugging"]
+readme = "README.md"
+
+[lib]
+crate-type = ["lib", "staticlib"]
+
+[badges]
+travis-ci = { repository = "kpcyrd/boxxy-rs" }
+
+[dependencies]
+rustyline = "1.0.0"
+log = "0.3"
+clap = { version = "2", default-features = false }
+libc = "0.2"
+errno = "0.2"
+regex = "0.2"
+nix = "0.9"
+
+[dev-dependencies]
+env_logger = "0.4"
