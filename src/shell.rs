@@ -100,6 +100,8 @@ impl Toolbox {
             ("setgroups"     , busybox::setgroups),
             ("setgid"        , busybox::setgid),
             ("setuid"        , busybox::setuid),
+            ("seteuid"       , busybox::seteuid),
+            ("setreuid"      , busybox::setreuid),
         ]);
         toolbox
     }

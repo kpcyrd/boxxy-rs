@@ -31,15 +31,52 @@ pub fn id(_args: Arguments) -> Result {
 pub fn setuid(args: Arguments) -> Result {
     let matches = App::new("setuid")
         .setting(AppSettings::DisableVersion)
-        .arg(Arg::with_name("uid")
-            .required(true)
-        )
+        .arg(Arg::with_name("uid").required(true))
         .get_matches_from_safe(args)?;
 
-    let uid = matches.value_of("uid").unwrap();
-    let uid = uid.parse()?;
+    let uid = matches.value_of("uid").unwrap().parse()?;
 
     let ret = unsafe { libc::setuid(uid) };
+
+    if ret != 0 {
+        let err = errno();
+        Err(Error::Errno(err))
+    } else {
+        Ok(())
+    }
+}
+
+
+pub fn seteuid(args: Arguments) -> Result {
+    let matches = App::new("seteuid")
+        .setting(AppSettings::DisableVersion)
+        .arg(Arg::with_name("uid").required(true))
+        .get_matches_from_safe(args)?;
+
+    let uid = matches.value_of("uid").unwrap().parse()?;
+
+    let ret = unsafe { libc::seteuid(uid) };
+
+    if ret != 0 {
+        let err = errno();
+        Err(Error::Errno(err))
+    } else {
+        Ok(())
+    }
+}
+
+
+pub fn setreuid(args: Arguments) -> Result {
+    let matches = App::new("setreuid")
+        .setting(AppSettings::DisableVersion)
+        .arg(Arg::with_name("ruid").required(true))
+        .arg(Arg::with_name("euid").required(true))
+        .get_matches_from_safe(args)?;
+
+    let ruid = matches.value_of("ruid").unwrap().parse()?;
+    let euid = matches.value_of("euid").unwrap().parse()?;
+
+    let ret = unsafe { libc::setreuid(ruid, euid) };
 
     if ret != 0 {
         let err = errno();
@@ -70,6 +107,7 @@ pub fn setgid(args: Arguments) -> Result {
         Ok(())
     }
 }
+
 
 pub fn setgroups(args: Arguments) -> Result {
     let matches = App::new("setgroups")
