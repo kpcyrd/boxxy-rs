@@ -32,6 +32,15 @@ There is an example program, check the Makefile to see how it's built.
 
     make cboxxy
 
+## Examples
+
+There are vulnerable sandboxes (`examples/vuln-*`) as a challenge that can be
+exploited using the boxxy shell (no need to compile anything).
+
+**DO NOT POST SPOILERS**
+
+Start a challenge using eg. `cargo run --example vuln-chroot`
+
 ## Warning
 
 The shell is a basic interface for human input, do not write actual scripts,

@@ -156,6 +156,31 @@ pub fn ls(args: Arguments) -> Result {
 }
 
 
+pub fn mkdir(args: Arguments) -> Result {
+    let matches = App::new("mount")
+        .setting(AppSettings::DisableVersion)
+        .arg(Arg::with_name("directory")
+            .required(true)
+        )
+        .arg(Arg::with_name("parents")
+            .short("p")
+            .long("parents")
+        )
+        .get_matches_from_safe(args)?;
+
+    let directory = matches.value_of("directory").unwrap();
+    let parents = matches.occurrences_of("parents") > 0;
+
+    if parents {
+        fs::create_dir_all(directory)?;
+    } else {
+        fs::create_dir(directory)?;
+    }
+
+    Ok(())
+}
+
+
 pub fn mount(args: Arguments) -> Result {
     let matches = App::new("mount")
         .setting(AppSettings::DisableVersion)
