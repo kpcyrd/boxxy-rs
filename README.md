@@ -50,5 +50,4 @@ there be dragons.
 
 ## License
 
-This project is free software released under the LGPL3+ license. The example
-code in `example/boxxy.rs` is released under the MIT license.
+This project is free software released under the LGPL3+ license.
