@@ -9,18 +9,19 @@ use std::result;
 
 
 pub fn id(_args: Arguments) -> Result {
-    let uid    = unsafe { libc::getuid() };
-    let euid   = unsafe { libc::geteuid() };
-    let gid    = unsafe { libc::getgid() };
-    let egid   = unsafe { libc::getegid() };
+    let (ruid, euid, suid) = ffi::getresuid().unwrap();
+    let (rgid, egid, sgid) = ffi::getresgid().unwrap();
+
     let groups = ffi::getgroups().unwrap();
 
     println!(
-        "uid={:?} euid={:?} gid={:?} egid={:?} groups={:?}",
-        uid,
+        "uid={:?} euid={:?} suid={:?} gid={:?} egid={:?} sgid={:?} groups={:?}",
+        ruid,
         euid,
-        gid,
+        suid,
+        rgid,
         egid,
+        sgid,
         groups
     );
 
@@ -87,6 +88,29 @@ pub fn setreuid(args: Arguments) -> Result {
 }
 
 
+pub fn setresuid(args: Arguments) -> Result {
+    let matches = App::new("setresuid")
+        .setting(AppSettings::DisableVersion)
+        .arg(Arg::with_name("ruid").required(true))
+        .arg(Arg::with_name("euid").required(true))
+        .arg(Arg::with_name("suid").required(true))
+        .get_matches_from_safe(args)?;
+
+    let ruid = matches.value_of("ruid").unwrap().parse()?;
+    let euid = matches.value_of("euid").unwrap().parse()?;
+    let suid = matches.value_of("suid").unwrap().parse()?;
+
+    let ret = unsafe { libc::setresuid(ruid, euid, suid) };
+
+    if ret != 0 {
+        let err = errno();
+        Err(Error::Errno(err))
+    } else {
+        Ok(())
+    }
+}
+
+
 pub fn setgid(args: Arguments) -> Result {
     let matches = App::new("setgid")
         .setting(AppSettings::DisableVersion)
@@ -99,6 +123,29 @@ pub fn setgid(args: Arguments) -> Result {
     let uid = uid.parse()?;
 
     let ret = unsafe { libc::setgid(uid) };
+
+    if ret != 0 {
+        let err = errno();
+        Err(Error::Errno(err))
+    } else {
+        Ok(())
+    }
+}
+
+
+pub fn setresgid(args: Arguments) -> Result {
+    let matches = App::new("setresgid")
+        .setting(AppSettings::DisableVersion)
+        .arg(Arg::with_name("rgid").required(true))
+        .arg(Arg::with_name("egid").required(true))
+        .arg(Arg::with_name("sgid").required(true))
+        .get_matches_from_safe(args)?;
+
+    let rgid = matches.value_of("rgid").unwrap().parse()?;
+    let egid = matches.value_of("egid").unwrap().parse()?;
+    let sgid = matches.value_of("sgid").unwrap().parse()?;
+
+    let ret = unsafe { libc::setresgid(rgid, egid, sgid) };
 
     if ret != 0 {
         let err = errno();
