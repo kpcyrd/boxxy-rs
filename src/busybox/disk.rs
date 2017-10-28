@@ -1,5 +1,5 @@
 use clap::{App, Arg, AppSettings};
-use libc;
+use libc::{self, mode_t};
 use errno::errno;
 use regex::Regex;
 use nix;
@@ -53,6 +53,35 @@ pub fn cd(args: Arguments) -> Result {
     let path = matches.value_of("path").unwrap();
 
     env::set_current_dir(&path)?;
+
+    Ok(())
+}
+
+
+pub fn chmod(args: Arguments) -> Result {
+    let matches = App::new("chmod")
+        .setting(AppSettings::DisableVersion)
+        .arg(Arg::with_name("mode").required(true))
+        .arg(Arg::with_name("path")
+            .required(true)
+            .multiple(true)
+        )
+        .get_matches_from_safe(args)?;
+
+    let mode = matches.value_of("mode").unwrap();
+    let mode = mode_t::from_str_radix(mode, 8)?;
+
+    for path in matches.values_of("path").unwrap() {
+        debug!("chmod: {:?} => {:?}", path, mode);
+
+        let path = CString::new(path).unwrap();
+        let ret = unsafe { libc::chmod(path.as_ptr(), mode) };
+
+        if ret != 0 {
+            let err = errno();
+            println!("error: {:?}", Error::Errno(err));
+        }
+    }
 
     Ok(())
 }
