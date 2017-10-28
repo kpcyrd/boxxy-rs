@@ -89,6 +89,7 @@ impl Toolbox {
         toolbox.insert_many(vec![
             ("cat"          , busybox::cat),
             ("cd"           , busybox::cd),
+            ("chown"        , busybox::chown),
             ("chroot"       , busybox::chroot),
             ("echo"         , busybox::echo),
             ("exec"         , busybox::exec),
