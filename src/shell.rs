@@ -100,6 +100,7 @@ impl Toolbox {
             ("mount"        , busybox::mount),
             ("id"           , busybox::id),
             ("pwd"          , busybox::pwd),
+            ("rm"           , busybox::rm),
             ("setgroups"    , busybox::setgroups),
             ("setgid"       , busybox::setgid),
             ("setresgid"    , busybox::setresgid),
