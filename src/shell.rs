@@ -1,3 +1,5 @@
+//! The interactive shell.
+
 use busybox;
 use clap;
 use rustyline::{self, Editor};
@@ -71,11 +73,19 @@ impl Completer for CmdCompleter {
 }
 
 
+/// The set of registered commands.
 pub struct Toolbox {
     commands: HashMap<String, Command>,
 }
 
 impl Toolbox {
+    /// Create an empty toolbox.
+    ///
+    /// ```
+    /// use boxxy::Toolbox;
+    ///
+    /// let toolbox = Toolbox::empty();
+    /// ```
     #[inline]
     pub fn empty() -> Toolbox {
         Toolbox {
@@ -83,6 +93,13 @@ impl Toolbox {
         }
     }
 
+    /// Create a toolbox that contains the default builtin commands.
+    ///
+    /// ```
+    /// use boxxy::Toolbox;
+    ///
+    /// let toolbox = Toolbox::new();
+    /// ```
     #[inline]
     pub fn new() -> Toolbox {
         let mut toolbox = Toolbox::empty();
@@ -112,11 +129,27 @@ impl Toolbox {
         toolbox
     }
 
+    /// Get a command by its name.
+    ///
+    /// ```
+    /// use boxxy::Toolbox;
+    ///
+    /// let toolbox = Toolbox::new();
+    /// println!("command: {:?}", toolbox.get("cat"));
+    /// ```
     #[inline]
     pub fn get(&self, key: &str) -> Option<&Command> {
         self.commands.get(key)
     }
 
+    /// List available commands.
+    ///
+    /// ```
+    /// use boxxy::Toolbox;
+    ///
+    /// let toolbox = Toolbox::new();
+    /// println!("commands: {:?}", toolbox.keys());
+    /// ```
     #[inline]
     pub fn keys(&self) -> Vec<String> {
         self.commands
@@ -125,22 +158,73 @@ impl Toolbox {
             .collect()
     }
 
+    /// Insert a command into the toolbox.
+    ///
+    /// ```
+    /// use boxxy::Toolbox;
+    ///
+    /// fn example(args: Vec<String>) -> Result<(), boxxy::Error> {
+    ///     println!("The world is your oyster! {:?}", args);
+    ///     Ok(())
+    /// }
+    ///
+    /// let mut toolbox = Toolbox::new();
+    /// toolbox.insert("example", example);
+    /// println!("commands: {:?}", toolbox.keys());
+    /// ```
     #[inline]
     pub fn insert(&mut self, key: &str, func: Command) {
         self.commands.insert(key.into(), func);
     }
 
-    #[inline]
-    pub fn with(mut self, commands: Vec<(&str, Command)>) -> Toolbox {
-        self.insert_many(commands);
-        self
-    }
-
+    /// Insert many commands into the toolbox.
+    ///
+    /// ```
+    /// use boxxy::Toolbox;
+    ///
+    /// fn example1(_args: Vec<String>) -> Result<(), boxxy::Error> {
+    ///     println!("example1");
+    ///     Ok(())
+    /// }
+    ///
+    /// fn example2(_args: Vec<String>) -> Result<(), boxxy::Error> {
+    ///     println!("example2");
+    ///     Ok(())
+    /// }
+    ///
+    /// let mut toolbox = Toolbox::new();
+    /// toolbox.insert_many(vec![
+    ///     ("example1", example1),
+    ///     ("example2", example2),
+    /// ]);
+    /// println!("commands: {:?}", toolbox.keys());
+    /// ```
     #[inline]
     pub fn insert_many(&mut self, commands: Vec<(&str, Command)>) {
         for (key, func) in commands {
             self.insert(key, func);
         }
+    }
+
+    /// Builder pattern to create a toolbox with custom commands.
+    ///
+    /// ```
+    /// use boxxy::Toolbox;
+    ///
+    /// fn example(args: Vec<String>) -> Result<(), boxxy::Error> {
+    ///     println!("The world is your oyster! {:?}", args);
+    ///     Ok(())
+    /// }
+    ///
+    /// let toolbox = Toolbox::new().with(vec![
+    ///         ("example", example),
+    ///     ]);
+    /// println!("commands: {:?}", toolbox.keys());
+    /// ```
+    #[inline]
+    pub fn with(mut self, commands: Vec<(&str, Command)>) -> Toolbox {
+        self.insert_many(commands);
+        self
     }
 }
 
@@ -148,12 +232,24 @@ impl Toolbox {
 type Command = fn(Vec<String>) -> Result<(), Error>;
 
 
+/// The struct that keeps track of the user interface.
 pub struct Shell {
     rl: Editor<CmdCompleter>,
     toolbox: Toolbox,
 }
 
 impl Shell {
+    /// Initializes a shell. Takes a [`Toolbox`] that contains the available
+    /// commands. The toolbox is also used to configure tab completion.
+    ///
+    /// [`Toolbox`]: struct.Toolbox.html
+    ///
+    /// ```
+    /// use boxxy::{Shell, Toolbox};
+    ///
+    /// let toolbox = Toolbox::new();
+    /// let shell = Shell::new(toolbox);
+    /// ```
     pub fn new(toolbox: Toolbox) -> Shell {
         let c = CmdCompleter::new(&toolbox);
 
@@ -217,6 +313,17 @@ impl Shell {
         }
     }
 
+    /// Run the input loop. This doesn't return until the shell is exited.
+    ///
+    /// ```
+    /// use boxxy::{Shell, Toolbox};
+    ///
+    /// let toolbox = Toolbox::new();
+    /// let shell = Shell::new(toolbox);
+    ///
+    /// // run the loop
+    /// shell.run();
+    /// ```
     pub fn run(mut self) {
         loop {
             match self.get_line() {
