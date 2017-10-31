@@ -9,7 +9,7 @@ categories = ["command-line-interface", "development-tools::debugging"]
 readme = "README.md"
 
 [lib]
-crate-type = ["lib", "staticlib"]
+crate-type = ["lib", "dylib", "staticlib"]
 
 [badges]
 travis-ci = { repository = "kpcyrd/boxxy-rs" }
