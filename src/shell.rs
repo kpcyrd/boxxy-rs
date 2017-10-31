@@ -6,10 +6,9 @@ use rustyline::{self, Editor};
 use rustyline::completion::Completer;
 
 use Error;
-use std::ptr;
+pub use ffi::ForeignCommand;
 use std::sync::Arc;
 use std::sync::Mutex;
-use std::ffi::CString;
 use std::collections::HashMap;
 
 
@@ -20,29 +19,14 @@ pub enum Command {
 }
 
 pub type NativeCommand = fn(Vec<String>) -> Result<(), Error>;
-pub type ForeignCommand = extern fn(usize, *const *const i8) -> i32;
 
 
 impl Command {
     fn run(&self, args: Vec<String>) -> Result<(), Error> {
         use self::Command::*;
         match *self {
-            Native(func)  => func(args),
-            Foreign(func) => {
-                let argc = args.len();
-
-                let args: Vec<_> = args.into_iter()
-                    .map(|x| CString::new(x).unwrap())
-                    .collect();
-
-                let mut argv: Vec<_> = args.iter()
-                    .map(|x| x.as_ptr())
-                    .collect();
-                argv.push(ptr::null()); // execve compatibility
-
-                func(argc, argv.as_ptr());
-                Ok(())
-            },
+            Native(ref func)  => func(args),
+            Foreign(ref func) => func.run(args),
         }
     }
 }
