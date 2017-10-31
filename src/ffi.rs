@@ -1,9 +1,16 @@
+//! Abstractions of some unsafe functions.
 use libc::{self, uid_t, gid_t};
 use errno::errno;
 
 use Error;
 
 
+/// Get the real uid, effective uid and saved uid.
+///
+/// ```
+/// let (ruid, euid, suid) = boxxy::ffi::getresuid().unwrap();
+/// println!("ruid={}, euid={}, suid={}", ruid, euid, suid);
+/// ```
 pub fn getresuid() -> Result<(uid_t, uid_t, uid_t), Error> {
     let mut ruid: uid_t = 0;
     let mut euid: uid_t = 0;
@@ -20,6 +27,12 @@ pub fn getresuid() -> Result<(uid_t, uid_t, uid_t), Error> {
 }
 
 
+/// Get the real gid, effective gid and saved gid.
+///
+/// ```
+/// let (rgid, egid, sgid) = boxxy::ffi::getresgid().unwrap();
+/// println!("rgid={}, egid={}, sgid={}", rgid, egid, sgid);
+/// ```
 pub fn getresgid() -> Result<(gid_t, gid_t, gid_t), Error> {
     let mut rgid: gid_t = 0;
     let mut egid: gid_t = 0;
@@ -36,6 +49,12 @@ pub fn getresgid() -> Result<(gid_t, gid_t, gid_t), Error> {
 }
 
 
+/// Get the supplemental groups.
+///
+/// ```
+/// let groups = boxxy::ffi::getgroups().unwrap();
+/// println!("groups={:?}", groups);
+/// ```
 pub fn getgroups() -> Result<Vec<gid_t>, Error> {
     let size = 128;
     let mut gids: Vec<gid_t> = Vec::with_capacity(size as usize);
@@ -54,6 +73,11 @@ pub fn getgroups() -> Result<Vec<gid_t>, Error> {
 }
 
 
+/// Set the supplemental groups.
+///
+/// ```no_run
+/// boxxy::ffi::setgroups(vec![1,2,3]).unwrap();
+/// ```
 pub fn setgroups(groups: Vec<gid_t>) -> Result<(), Error> {
     let ret = unsafe { libc::setgroups(groups.len(), groups.as_ptr()) };
 
