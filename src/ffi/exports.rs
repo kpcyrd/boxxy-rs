@@ -32,7 +32,7 @@ pub extern fn boxxy_with(target: *mut Shell, name: *const libc::c_char, ptr: For
 
 /// Execute a single command.
 #[no_mangle]
-pub extern fn boxxy_exec_once(target: *mut Shell, cmd: *const libc::c_char) -> i32 {
+pub extern fn boxxy_exec_once_at(target: *mut Shell, cmd: *const libc::c_char) -> i32 {
     let cmd = unsafe {
         let bytes = CStr::from_ptr(cmd).to_bytes();
         String::from_utf8(bytes.to_vec()).ok().expect("Invalid UTF8 string").to_string()

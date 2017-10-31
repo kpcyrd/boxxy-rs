@@ -20,7 +20,9 @@ int main() {
     void* boxxy = boxxy_init();
     boxxy_with(boxxy, "ohai", ohai);
     printf("[*] calling boxxy (%p) ...\n", (void *) boxxy);
-    boxxy_exec_once(boxxy, "id\n");
+
+    // execute commands automatically:
+    // boxxy_exec_once_at(boxxy, "id\n");
 
     boxxy_run_at(boxxy);
     boxxy_free(boxxy);
