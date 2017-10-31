@@ -44,42 +44,6 @@ impl From<ForeignCommand> for Command {
     }
 }
 
-fn parse(line: &str) -> Vec<String> {
-    let mut cmd = Vec::new();
-
-    let mut token = String::new();
-
-    let mut escape = false;
-    for x in line.chars() {
-        if escape {
-            token.push(x);
-            escape = false;
-            continue;
-        }
-
-        match x {
-            ' ' | '\n' => {
-                if token.len() > 0 {
-                    cmd.push(token);
-                    token = String::new();
-                }
-            },
-            '\\' => {
-                escape = true;
-            },
-            x => {
-                token.push(x);
-            },
-        }
-    }
-
-    if token.len() > 0 {
-            cmd.push(token);
-    }
-
-    cmd
-}
-
 
 struct CmdCompleter(Arc<Mutex<Toolbox>>);
 
@@ -333,6 +297,8 @@ impl Shell {
     }
 
     fn process(&self, prog: String, args: Vec<String>) {
+        debug!("prog: {:?}, args: {:?}", prog, args);
+
         let result = match self.toolbox.lock().unwrap().get(&prog) {
             Some(func) => func.run(args),
             None => Err(Error::Args(clap::Error {
@@ -353,33 +319,28 @@ impl Shell {
         }
     }
 
+    #[inline]
     fn prompt(&mut self) -> Result<String, rustyline::error::ReadlineError> {
         self.rl.readline(" [%]> ")
     }
 
+    #[inline]
     fn get_line(&mut self) -> Result<Option<(String, Vec<String>)>, ()> {
         let readline = self.prompt();
 
         match readline {
             Ok(line) => {
                 self.rl.add_history_entry(line.as_ref());
-
-                trace!("line: {:?}", line);
-                if is_comment(&line) {
-                    return Ok(None)
-                }
-
-                let cmd = parse(&line);
-                debug!("got {:?}", cmd);
-
-                if cmd.len() == 0 {
-                    Ok(None)
-                } else {
-                    let prog = cmd[0].clone();
-                    Ok(Some((prog, cmd)))
-                }
+                Ok(parse_line(&line))
             },
             Err(_) => Err(()),
+        }
+    }
+
+    #[inline]
+    pub fn exec_once(&self, line: &str) {
+        if let Some((prog, args)) = parse_line(line) {
+            self.process(prog, args);
         }
     }
 
@@ -398,7 +359,6 @@ impl Shell {
         loop {
             match self.get_line() {
                 Ok(Some((prog, args))) => {
-                    debug!("prog: {:?}, args: {:?}", prog, args);
                     self.process(prog, args);
                 },
                 Ok(None) => (),
@@ -408,6 +368,64 @@ impl Shell {
     }
 }
 
+
+#[inline]
+fn tokenize(line: &str) -> Vec<String> {
+    let mut cmd = Vec::new();
+    let mut token = String::new();
+
+    let mut escape = false;
+    for x in line.chars() {
+        if escape {
+            token.push(x);
+            escape = false;
+            continue;
+        }
+
+        match x {
+            ' ' | '\n' => {
+                if token.len() > 0 {
+                    cmd.push(token);
+                    token = String::new();
+                }
+            },
+            '\\' => {
+                escape = true;
+            },
+            x => {
+                token.push(x);
+            },
+        }
+    }
+
+    if token.len() > 0 {
+            cmd.push(token);
+    }
+
+    cmd
+}
+
+
+#[inline]
+fn parse_line(line: &str) -> Option<(String, Vec<String>)> {
+    trace!("line: {:?}", line);
+    if is_comment(&line) {
+        return None;
+    }
+
+    let cmd = tokenize(&line);
+    debug!("got {:?}", cmd);
+
+    if cmd.len() == 0 {
+        None
+    } else {
+        let prog = cmd[0].clone();
+        Some((prog, cmd))
+    }
+}
+
+
+#[inline]
 fn is_comment(line: &str) -> bool {
     for x in line.chars() {
         match x {
@@ -420,19 +438,20 @@ fn is_comment(line: &str) -> bool {
     false
 }
 
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_parse() {
-        let cmd = parse("foo\\  \\\\bar");
+        let cmd = tokenize("foo\\  \\\\bar");
         assert_eq!(cmd, vec!["foo ", "\\bar"]);
     }
 
     #[test]
     fn test_empty() {
-        let cmd = parse("");
+        let cmd = tokenize("");
 
         let expected: Vec<String> = Vec::new();
         assert_eq!(expected, cmd);
@@ -440,7 +459,7 @@ mod tests {
 
     #[test]
     fn test_newline() {
-        let cmd = parse("\n");
+        let cmd = tokenize("\n");
 
         let expected: Vec<String> = Vec::new();
         assert_eq!(expected, cmd);
