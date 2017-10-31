@@ -81,23 +81,22 @@ fn parse(line: &str) -> Vec<String> {
 }
 
 
-struct CmdCompleter {
-    toolbox: Arc<Mutex<Toolbox>>,
-}
+struct CmdCompleter(Arc<Mutex<Toolbox>>);
 
 impl CmdCompleter {
+    #[inline]
     fn new(toolbox: Arc<Mutex<Toolbox>>) -> CmdCompleter {
-        CmdCompleter {
-            toolbox,
-        }
+        CmdCompleter(toolbox)
     }
 
+    #[inline]
     fn commands(&self) -> Vec<String> {
-        self.toolbox.lock().unwrap().keys()
+        self.0.lock().unwrap().keys()
     }
 }
 
 impl Completer for CmdCompleter {
+    #[inline]
     fn complete(&self, line: &str, pos: usize) -> rustyline::Result<(usize, Vec<String>)> {
         if line.contains(" ") || line.len() != pos {
             return Ok((0, vec![]));
@@ -114,9 +113,7 @@ impl Completer for CmdCompleter {
 
 
 /// The set of registered commands.
-pub struct Toolbox {
-    commands: HashMap<String, Command>,
-}
+pub struct Toolbox(HashMap<String, Command>);
 
 impl Toolbox {
     /// Create an empty toolbox.
@@ -128,9 +125,7 @@ impl Toolbox {
     /// ```
     #[inline]
     pub fn empty() -> Toolbox {
-        Toolbox {
-            commands: HashMap::new(),
-        }
+        Toolbox(HashMap::new())
     }
 
     /// Create a toolbox that contains the default builtin commands.
@@ -179,7 +174,7 @@ impl Toolbox {
     /// ```
     #[inline]
     pub fn get(&self, key: &str) -> Option<&Command> {
-        self.commands.get(key)
+        self.0.get(key)
     }
 
     /// List available commands.
@@ -192,7 +187,7 @@ impl Toolbox {
     /// ```
     #[inline]
     pub fn keys(&self) -> Vec<String> {
-        self.commands
+        self.0
             .keys()
             .map(|x| x.to_owned())
             .collect()
@@ -213,8 +208,8 @@ impl Toolbox {
     /// println!("commands: {:?}", toolbox.keys());
     /// ```
     #[inline]
-    pub fn insert(&mut self, key: &str, func: Command) {
-        self.commands.insert(key.into(), func);
+    pub fn insert<I: Into<String>>(&mut self, key: I, func: Command) {
+        self.0.insert(key.into(), func);
     }
 
     /// Insert many commands into the toolbox.
@@ -240,7 +235,7 @@ impl Toolbox {
     /// println!("commands: {:?}", toolbox.keys());
     /// ```
     #[inline]
-    pub fn insert_many(&mut self, commands: Vec<(&str, Command)>) {
+    pub fn insert_many<I: Into<String>>(&mut self, commands: Vec<(I, Command)>) {
         for (key, func) in commands {
             self.insert(key, func);
         }
@@ -271,7 +266,7 @@ impl Toolbox {
     /// println!("commands: {:?}", toolbox.keys());
     /// ```
     #[inline]
-    pub fn insert_many_native(&mut self, commands: Vec<(&str, NativeCommand)>) {
+    pub fn insert_many_native<I: Into<String>>(&mut self, commands: Vec<(I, NativeCommand)>) {
         for (key, func) in commands {
             self.insert(key, func.into());
         }
@@ -293,7 +288,7 @@ impl Toolbox {
     /// println!("commands: {:?}", toolbox.keys());
     /// ```
     #[inline]
-    pub fn with(mut self, commands: Vec<(&str, NativeCommand)>) -> Toolbox {
+    pub fn with<I: Into<String>>(mut self, commands: Vec<(I, NativeCommand)>) -> Toolbox {
         self.insert_many_native(commands);
         self
     }
@@ -331,7 +326,8 @@ impl Shell {
         }
     }
 
-    pub fn insert(&mut self, name: &str, command: Command) {
+    #[inline]
+    pub fn insert<I: Into<String>>(&mut self, name: I, command: Command) {
         let mut toolbox = self.toolbox.lock().unwrap();
         toolbox.insert(name, command);
     }

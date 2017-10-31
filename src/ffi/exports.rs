@@ -27,7 +27,7 @@ pub extern fn boxxy_with(target: *mut Shell, name: *const libc::c_char, ptr: For
     };
 
     debug!("registering: {:?} -> {:?}", name, ptr);
-    unsafe { (&mut *target) }.insert(&name, ptr.into());
+    unsafe { (&mut *target) }.insert(name, ptr.into());
 }
 
 /// Start shell at specific pointer.
