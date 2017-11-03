@@ -1,7 +1,7 @@
 CC ?= gcc
 CARGO ?= cargo
 CFLAGS += -Wall -Iinclude/
-LDFLAGS += -Ltarget/release -lutil -ldl -lrt -lpthread -lgcc_s -lc -lm -lboxxy
+LDFLAGS += -Ltarget/release -lutil -ldl -lrt -lpthread -lgcc_s -lc -lm
 OBJ := cboxxy.o
 
 all: cboxxy

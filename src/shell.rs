@@ -6,64 +6,67 @@ use rustyline::{self, Editor};
 use rustyline::completion::Completer;
 
 use Error;
+pub use ffi::ForeignCommand;
+use std::sync::Arc;
+use std::sync::Mutex;
 use std::collections::HashMap;
 
-fn parse(line: &str) -> Vec<String> {
-    let mut cmd = Vec::new();
 
-    let mut token = String::new();
+#[derive(Debug)]
+pub enum Command {
+    Native(NativeCommand),
+    Foreign(ForeignCommand),
+}
 
-    let mut escape = false;
-    for x in line.chars() {
-        if escape {
-            token.push(x);
-            escape = false;
-            continue;
-        }
+pub type NativeCommand = fn(Vec<String>) -> Result<(), Error>;
 
-        match x {
-            ' ' | '\n' => {
-                if token.len() > 0 {
-                    cmd.push(token);
-                    token = String::new();
-                }
-            },
-            '\\' => {
-                escape = true;
-            },
-            x => {
-                token.push(x);
-            },
+
+impl Command {
+    fn run(&self, args: Vec<String>) -> Result<(), Error> {
+        use self::Command::*;
+        match *self {
+            Native(ref func)  => func(args),
+            Foreign(ref func) => func.run(args),
         }
     }
-
-    if token.len() > 0 {
-            cmd.push(token);
-    }
-
-    cmd
 }
 
 
-struct CmdCompleter {
-    commands: Vec<String>,
+impl From<NativeCommand> for Command {
+    fn from(cmd: NativeCommand) -> Command {
+        Command::Native(cmd)
+    }
 }
+
+impl From<ForeignCommand> for Command {
+    fn from(cmd: ForeignCommand) -> Command {
+        Command::Foreign(cmd)
+    }
+}
+
+
+struct CmdCompleter(Arc<Mutex<Toolbox>>);
 
 impl CmdCompleter {
-    fn new(toolbox: &Toolbox) -> CmdCompleter {
-        CmdCompleter {
-            commands: toolbox.keys(),
-        }
+    #[inline]
+    fn new(toolbox: Arc<Mutex<Toolbox>>) -> CmdCompleter {
+        CmdCompleter(toolbox)
+    }
+
+    #[inline]
+    fn commands(&self) -> Vec<String> {
+        self.0.lock().unwrap().keys()
     }
 }
 
 impl Completer for CmdCompleter {
+    #[inline]
     fn complete(&self, line: &str, pos: usize) -> rustyline::Result<(usize, Vec<String>)> {
         if line.contains(" ") || line.len() != pos {
             return Ok((0, vec![]));
         }
 
-        let results: Vec<String> = self.commands.iter()
+        let results: Vec<String> = self.commands().iter()
             .filter(|x| x.starts_with(line))
             .map(|x| x.clone() + " ")
             .collect();
@@ -74,9 +77,7 @@ impl Completer for CmdCompleter {
 
 
 /// The set of registered commands.
-pub struct Toolbox {
-    commands: HashMap<String, Command>,
-}
+pub struct Toolbox(HashMap<String, Command>);
 
 impl Toolbox {
     /// Create an empty toolbox.
@@ -88,9 +89,7 @@ impl Toolbox {
     /// ```
     #[inline]
     pub fn empty() -> Toolbox {
-        Toolbox {
-            commands: HashMap::new(),
-        }
+        Toolbox(HashMap::new())
     }
 
     /// Create a toolbox that contains the default builtin commands.
@@ -103,7 +102,7 @@ impl Toolbox {
     #[inline]
     pub fn new() -> Toolbox {
         let mut toolbox = Toolbox::empty();
-        toolbox.insert_many(vec![
+        toolbox.insert_many_native(vec![
             ("cat"          , busybox::cat),
             ("cd"           , busybox::cd),
             ("chmod"        , busybox::chmod),
@@ -139,7 +138,7 @@ impl Toolbox {
     /// ```
     #[inline]
     pub fn get(&self, key: &str) -> Option<&Command> {
-        self.commands.get(key)
+        self.0.get(key)
     }
 
     /// List available commands.
@@ -152,7 +151,7 @@ impl Toolbox {
     /// ```
     #[inline]
     pub fn keys(&self) -> Vec<String> {
-        self.commands
+        self.0
             .keys()
             .map(|x| x.to_owned())
             .collect()
@@ -161,7 +160,7 @@ impl Toolbox {
     /// Insert a command into the toolbox.
     ///
     /// ```
-    /// use boxxy::Toolbox;
+    /// use boxxy::{Toolbox, Command};
     ///
     /// fn example(args: Vec<String>) -> Result<(), boxxy::Error> {
     ///     println!("The world is your oyster! {:?}", args);
@@ -169,15 +168,46 @@ impl Toolbox {
     /// }
     ///
     /// let mut toolbox = Toolbox::new();
-    /// toolbox.insert("example", example);
+    /// toolbox.insert("example", Command::Native(example));
     /// println!("commands: {:?}", toolbox.keys());
     /// ```
     #[inline]
-    pub fn insert(&mut self, key: &str, func: Command) {
-        self.commands.insert(key.into(), func);
+    pub fn insert<I: Into<String>>(&mut self, key: I, func: Command) {
+        self.0.insert(key.into(), func);
     }
 
     /// Insert many commands into the toolbox.
+    ///
+    /// ```
+    /// use boxxy::{Toolbox, Command};
+    ///
+    /// fn example1(_args: Vec<String>) -> Result<(), boxxy::Error> {
+    ///     println!("example1");
+    ///     Ok(())
+    /// }
+    ///
+    /// fn example2(_args: Vec<String>) -> Result<(), boxxy::Error> {
+    ///     println!("example2");
+    ///     Ok(())
+    /// }
+    ///
+    /// let mut toolbox = Toolbox::new();
+    /// toolbox.insert_many(vec![
+    ///     ("example1", Command::Native(example1)),
+    ///     ("example2", Command::Native(example2)),
+    /// ]);
+    /// println!("commands: {:?}", toolbox.keys());
+    /// ```
+    #[inline]
+    pub fn insert_many<I: Into<String>>(&mut self, commands: Vec<(I, Command)>) {
+        for (key, func) in commands {
+            self.insert(key, func);
+        }
+    }
+
+    /// Insert many [`NativeCommand`]s into the toolbox.
+    ///
+    /// [`NativeCommand`]: struct.NativeCommand.html
     ///
     /// ```
     /// use boxxy::Toolbox;
@@ -193,16 +223,16 @@ impl Toolbox {
     /// }
     ///
     /// let mut toolbox = Toolbox::new();
-    /// toolbox.insert_many(vec![
+    /// toolbox.insert_many_native(vec![
     ///     ("example1", example1),
     ///     ("example2", example2),
     /// ]);
     /// println!("commands: {:?}", toolbox.keys());
     /// ```
     #[inline]
-    pub fn insert_many(&mut self, commands: Vec<(&str, Command)>) {
+    pub fn insert_many_native<I: Into<String>>(&mut self, commands: Vec<(I, NativeCommand)>) {
         for (key, func) in commands {
-            self.insert(key, func);
+            self.insert(key, func.into());
         }
     }
 
@@ -222,20 +252,17 @@ impl Toolbox {
     /// println!("commands: {:?}", toolbox.keys());
     /// ```
     #[inline]
-    pub fn with(mut self, commands: Vec<(&str, Command)>) -> Toolbox {
-        self.insert_many(commands);
+    pub fn with<I: Into<String>>(mut self, commands: Vec<(I, NativeCommand)>) -> Toolbox {
+        self.insert_many_native(commands);
         self
     }
 }
 
 
-type Command = fn(Vec<String>) -> Result<(), Error>;
-
-
 /// The struct that keeps track of the user interface.
 pub struct Shell {
     rl: Editor<CmdCompleter>,
-    toolbox: Toolbox,
+    toolbox: Arc<Mutex<Toolbox>>,
 }
 
 impl Shell {
@@ -251,9 +278,10 @@ impl Shell {
     /// let shell = Shell::new(toolbox);
     /// ```
     pub fn new(toolbox: Toolbox) -> Shell {
-        let c = CmdCompleter::new(&toolbox);
+        let toolbox = Arc::new(Mutex::new(toolbox));
 
         let mut rl = Editor::new();
+        let c = CmdCompleter::new(toolbox.clone());
         rl.set_completer(Some(c));
 
         Shell {
@@ -262,13 +290,21 @@ impl Shell {
         }
     }
 
+    #[inline]
+    pub fn insert<I: Into<String>>(&mut self, name: I, command: Command) {
+        let mut toolbox = self.toolbox.lock().unwrap();
+        toolbox.insert(name, command);
+    }
+
     fn process(&self, prog: String, args: Vec<String>) {
-        let result = match self.toolbox.get(&prog) {
-            Some(func) => func(args),
+        debug!("prog: {:?}, args: {:?}", prog, args);
+
+        let result = match self.toolbox.lock().unwrap().get(&prog) {
+            Some(func) => func.run(args),
             None => Err(Error::Args(clap::Error {
-                    message: String::from("\u{1b}[1;31merror:\u{1b}[0m unknown command"),
-                    kind: clap::ErrorKind::MissingRequiredArgument,
-                    info: None,
+                message: String::from("\u{1b}[1;31merror:\u{1b}[0m unknown command"),
+                kind: clap::ErrorKind::MissingRequiredArgument,
+                info: None,
             })),
         };
 
@@ -283,33 +319,28 @@ impl Shell {
         }
     }
 
+    #[inline]
     fn prompt(&mut self) -> Result<String, rustyline::error::ReadlineError> {
         self.rl.readline(" [%]> ")
     }
 
+    #[inline]
     fn get_line(&mut self) -> Result<Option<(String, Vec<String>)>, ()> {
         let readline = self.prompt();
 
         match readline {
             Ok(line) => {
                 self.rl.add_history_entry(line.as_ref());
-
-                trace!("line: {:?}", line);
-                if is_comment(&line) {
-                    return Ok(None)
-                }
-
-                let cmd = parse(&line);
-                debug!("got {:?}", cmd);
-
-                if cmd.len() == 0 {
-                    Ok(None)
-                } else {
-                    let prog = cmd[0].clone();
-                    Ok(Some((prog, cmd)))
-                }
+                Ok(parse_line(&line))
             },
             Err(_) => Err(()),
+        }
+    }
+
+    #[inline]
+    pub fn exec_once(&self, line: &str) {
+        if let Some((prog, args)) = parse_line(line) {
+            self.process(prog, args);
         }
     }
 
@@ -319,16 +350,15 @@ impl Shell {
     /// use boxxy::{Shell, Toolbox};
     ///
     /// let toolbox = Toolbox::new();
-    /// let shell = Shell::new(toolbox);
+    /// let mut shell = Shell::new(toolbox);
     ///
     /// // run the loop
     /// shell.run();
     /// ```
-    pub fn run(mut self) {
+    pub fn run(&mut self) {
         loop {
             match self.get_line() {
                 Ok(Some((prog, args))) => {
-                    debug!("prog: {:?}, args: {:?}", prog, args);
                     self.process(prog, args);
                 },
                 Ok(None) => (),
@@ -338,6 +368,64 @@ impl Shell {
     }
 }
 
+
+#[inline]
+fn tokenize(line: &str) -> Vec<String> {
+    let mut cmd = Vec::new();
+    let mut token = String::new();
+
+    let mut escape = false;
+    for x in line.chars() {
+        if escape {
+            token.push(x);
+            escape = false;
+            continue;
+        }
+
+        match x {
+            ' ' | '\n' => {
+                if token.len() > 0 {
+                    cmd.push(token);
+                    token = String::new();
+                }
+            },
+            '\\' => {
+                escape = true;
+            },
+            x => {
+                token.push(x);
+            },
+        }
+    }
+
+    if token.len() > 0 {
+            cmd.push(token);
+    }
+
+    cmd
+}
+
+
+#[inline]
+fn parse_line(line: &str) -> Option<(String, Vec<String>)> {
+    trace!("line: {:?}", line);
+    if is_comment(&line) {
+        return None;
+    }
+
+    let cmd = tokenize(&line);
+    debug!("got {:?}", cmd);
+
+    if cmd.len() == 0 {
+        None
+    } else {
+        let prog = cmd[0].clone();
+        Some((prog, cmd))
+    }
+}
+
+
+#[inline]
 fn is_comment(line: &str) -> bool {
     for x in line.chars() {
         match x {
@@ -350,19 +438,20 @@ fn is_comment(line: &str) -> bool {
     false
 }
 
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_parse() {
-        let cmd = parse("foo\\  \\\\bar");
+        let cmd = tokenize("foo\\  \\\\bar");
         assert_eq!(cmd, vec!["foo ", "\\bar"]);
     }
 
     #[test]
     fn test_empty() {
-        let cmd = parse("");
+        let cmd = tokenize("");
 
         let expected: Vec<String> = Vec::new();
         assert_eq!(expected, cmd);
@@ -370,7 +459,7 @@ mod tests {
 
     #[test]
     fn test_newline() {
-        let cmd = parse("\n");
+        let cmd = tokenize("\n");
 
         let expected: Vec<String> = Vec::new();
         assert_eq!(expected, cmd);

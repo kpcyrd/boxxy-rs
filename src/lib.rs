@@ -50,6 +50,7 @@ pub mod ffi;
 pub mod shell;
 
 pub use shell::{Shell, Toolbox};
+pub use shell::{Command, NativeCommand, ForeignCommand};
 
 /// Result of builtin commands
 pub type Result = std::result::Result<(), Error>;
@@ -88,11 +89,4 @@ impl From<regex::Error> for Error {
     fn from(err: regex::Error) -> Error {
         Error::InvalidRegex(err)
     }
-}
-
-
-/// Export function for FFI
-#[no_mangle]
-pub extern fn run_boxxy() {
-    Shell::new(Toolbox::new()).run();
 }

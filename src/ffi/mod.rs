@@ -3,6 +3,34 @@ use libc::{self, uid_t, gid_t};
 use errno::errno;
 
 use Error;
+use std::ptr;
+use std::ffi::CString;
+
+pub mod exports;
+pub use self::exports::*;
+
+
+#[derive(Debug)]
+pub struct ForeignCommand(extern fn(usize, *const *const i8) -> i32);
+
+impl ForeignCommand {
+    #[inline]
+    pub fn run(&self, args: Vec<String>) -> Result<(), Error> {
+        let argc = args.len();
+
+        let args: Vec<_> = args.into_iter()
+            .map(|x| CString::new(x).unwrap())
+            .collect();
+
+        let mut argv: Vec<_> = args.iter()
+            .map(|x| x.as_ptr())
+            .collect();
+        argv.push(ptr::null()); // execve compatibility
+
+        self.0(argc, argv.as_ptr());
+        Ok(())
+    }
+}
 
 
 /// Get the real uid, effective uid and saved uid.
