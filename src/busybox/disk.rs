@@ -12,8 +12,7 @@ use std::ffi::CString;
 use std::io::BufReader;
 use std::io::prelude::*;
 use std::time::SystemTime;
-use std::os::linux::fs::MetadataExt as _L;
-use std::os::unix::fs::MetadataExt as _U;
+use std::os::unix::fs::MetadataExt;
 
 
 pub fn cat(args: Arguments) -> Result {
@@ -267,7 +266,7 @@ pub fn ls(args: Arguments) -> Result {
                     if long {
                         let meta = entry.metadata().unwrap();
                         println!("{} {:5} {:5}  {:14} {:?}",
-                            perms_to_str(meta.is_dir(), meta.mode()), meta.st_uid(), meta.st_gid(),
+                            perms_to_str(meta.is_dir(), meta.mode()), meta.uid(), meta.gid(),
                             meta.modified().map(|x| since(x)).unwrap_or(String::from("-")),
                             entry.path());
                     } else {
