@@ -2,6 +2,7 @@ use clap::{App, Arg, AppSettings};
 use libc::{self, mode_t};
 use errno::errno;
 use regex::Regex;
+#[cfg(target_os="linux")]
 use nix;
 
 use ::{Result, Error, Arguments};
@@ -283,7 +284,7 @@ pub fn ls(args: Arguments) -> Result {
 
 
 pub fn mkdir(args: Arguments) -> Result {
-    let matches = App::new("mount")
+    let matches = App::new("mkdir")
         .setting(AppSettings::DisableVersion)
         .arg(Arg::with_name("directory")
             .required(true)
@@ -307,6 +308,7 @@ pub fn mkdir(args: Arguments) -> Result {
 }
 
 
+#[cfg(target_os="linux")]
 pub fn mount(args: Arguments) -> Result {
     let matches = App::new("mount")
         .setting(AppSettings::DisableVersion)
