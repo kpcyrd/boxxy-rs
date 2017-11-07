@@ -119,16 +119,16 @@ impl Toolbox {
             ("rm"           , busybox::rm),
             ("setgroups"    , busybox::setgroups),
             ("setgid"       , busybox::setgid),
-            ("setresgid"    , busybox::setresgid),
             ("setuid"       , busybox::setuid),
             ("seteuid"      , busybox::seteuid),
-            ("setreuid"     , busybox::setreuid),
-            ("setresuid"    , busybox::setresuid),
         ]);
 
         #[cfg(target_os="linux")]
         toolbox.insert_many_native(vec![
             ("mount"        , busybox::mount),
+            ("setresgid"    , busybox::setresgid),
+            ("setresuid"    , busybox::setresuid),
+            ("setreuid"     , busybox::setreuid),
         ]);
 
         toolbox

@@ -8,24 +8,49 @@ use ffi;
 use std::result;
 
 
-pub fn id(_args: Arguments) -> Result {
-    let (ruid, euid, suid) = ffi::getresuid().unwrap();
-    let (rgid, egid, sgid) = ffi::getresgid().unwrap();
+cfg_if! {
+    if #[cfg(target_os="linux")] {
+        pub fn id(_args: Arguments) -> Result {
+            let (ruid, euid, suid) = ffi::getresuid().unwrap();
+            let (rgid, egid, sgid) = ffi::getresgid().unwrap();
 
-    let groups = ffi::getgroups().unwrap();
+            let groups = ffi::getgroups().unwrap();
 
-    println!(
-        "uid={:?} euid={:?} suid={:?} gid={:?} egid={:?} sgid={:?} groups={:?}",
-        ruid,
-        euid,
-        suid,
-        rgid,
-        egid,
-        sgid,
-        groups
-    );
+            println!(
+                "uid={:?} euid={:?} suid={:?} gid={:?} egid={:?} sgid={:?} groups={:?}",
+                ruid,
+                euid,
+                suid,
+                rgid,
+                egid,
+                sgid,
+                groups
+            );
 
-    Ok(())
+            Ok(())
+        }
+    } else {
+        pub fn id(_args: Arguments) -> Result {
+            let ruid = ffi::getuid().unwrap();
+            let euid = ffi::geteuid().unwrap();
+
+            let rgid = ffi::getgid().unwrap();
+            let egid = ffi::getegid().unwrap();
+
+            let groups = ffi::getgroups().unwrap();
+
+            println!(
+                "uid={:?} euid={:?} gid={:?} egid={:?} groups={:?}",
+                ruid,
+                euid,
+                rgid,
+                egid,
+                groups
+            );
+
+            Ok(())
+        }
+    }
 }
 
 
@@ -60,6 +85,7 @@ pub fn seteuid(args: Arguments) -> Result {
 }
 
 
+#[cfg(target_os="linux")]
 pub fn setreuid(args: Arguments) -> Result {
     let matches = App::new("setreuid")
         .setting(AppSettings::DisableVersion)
@@ -81,6 +107,7 @@ pub fn setreuid(args: Arguments) -> Result {
 }
 
 
+#[cfg(target_os="linux")]
 pub fn setresuid(args: Arguments) -> Result {
     let matches = App::new("setresuid")
         .setting(AppSettings::DisableVersion)
@@ -126,6 +153,7 @@ pub fn setgid(args: Arguments) -> Result {
 }
 
 
+#[cfg(target_os="linux")]
 pub fn setresgid(args: Arguments) -> Result {
     let matches = App::new("setresgid")
         .setting(AppSettings::DisableVersion)

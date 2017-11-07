@@ -44,6 +44,18 @@ impl ForeignCommand {
 
 
 
+pub fn getuid() -> Result<uid_t, Error> {
+    let uid = unsafe { libc::getuid() };
+    Ok(uid)
+}
+
+
+pub fn geteuid() -> Result<uid_t, Error> {
+    let euid = unsafe { libc::geteuid() };
+    Ok(euid)
+}
+
+
 pub fn setuid(uid: uid_t) -> Result<(), Error> {
     let ret = unsafe { libc::setuid(uid) };
 
@@ -62,6 +74,7 @@ pub fn setuid(uid: uid_t) -> Result<(), Error> {
 /// let (ruid, euid, suid) = boxxy::ffi::getresuid().unwrap();
 /// println!("ruid={}, euid={}, suid={}", ruid, euid, suid);
 /// ```
+#[cfg(target_os="linux")]
 pub fn getresuid() -> Result<(uid_t, uid_t, uid_t), Error> {
     let mut ruid: uid_t = 0;
     let mut euid: uid_t = 0;
@@ -78,12 +91,24 @@ pub fn getresuid() -> Result<(uid_t, uid_t, uid_t), Error> {
 }
 
 
+pub fn getgid() -> Result<uid_t, Error> {
+    let gid = unsafe { libc::getgid() };
+    Ok(gid)
+}
+
+
+pub fn getegid() -> Result<uid_t, Error> {
+    let egid = unsafe { libc::getegid() };
+    Ok(egid)
+}
+
 /// Get the real gid, effective gid and saved gid.
 ///
 /// ```
 /// let (rgid, egid, sgid) = boxxy::ffi::getresgid().unwrap();
 /// println!("rgid={}, egid={}, sgid={}", rgid, egid, sgid);
 /// ```
+#[cfg(target_os="linux")]
 pub fn getresgid() -> Result<(gid_t, gid_t, gid_t), Error> {
     let mut rgid: gid_t = 0;
     let mut egid: gid_t = 0;
