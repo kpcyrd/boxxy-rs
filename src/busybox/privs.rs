@@ -37,14 +37,7 @@ pub fn setuid(args: Arguments) -> Result {
 
     let uid = matches.value_of("uid").unwrap().parse()?;
 
-    let ret = unsafe { libc::setuid(uid) };
-
-    if ret != 0 {
-        let err = errno();
-        Err(Error::Errno(err))
-    } else {
-        Ok(())
-    }
+    ffi::setuid(uid)
 }
 
 

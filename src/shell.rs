@@ -114,7 +114,6 @@ impl Toolbox {
             ("jit"          , busybox::jit),
             ("ls"           , busybox::ls),
             ("mkdir"        , busybox::mkdir),
-            ("mount"        , busybox::mount),
             ("id"           , busybox::id),
             ("pwd"          , busybox::pwd),
             ("rm"           , busybox::rm),
@@ -126,6 +125,12 @@ impl Toolbox {
             ("setreuid"     , busybox::setreuid),
             ("setresuid"    , busybox::setresuid),
         ]);
+
+        #[cfg(target_os="linux")]
+        toolbox.insert_many_native(vec![
+            ("mount"        , busybox::mount),
+        ]);
+
         toolbox
     }
 

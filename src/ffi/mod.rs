@@ -9,6 +9,16 @@ use std::ffi::CString;
 pub mod exports;
 pub use self::exports::*;
 
+#[cfg(target_os="linux")]
+#[path="linux.rs"]
+mod native;
+
+#[cfg(target_os="macos")]
+#[path="macos.rs"]
+mod native;
+
+pub use self::native::*;
+
 
 #[derive(Debug)]
 pub struct ForeignCommand(extern fn(usize, *const *const i8) -> i32);
@@ -28,6 +38,19 @@ impl ForeignCommand {
         argv.push(ptr::null()); // execve compatibility
 
         self.0(argc, argv.as_ptr());
+        Ok(())
+    }
+}
+
+
+
+pub fn setuid(uid: uid_t) -> Result<(), Error> {
+    let ret = unsafe { libc::setuid(uid) };
+
+    if ret != 0 {
+        let err = errno();
+        Err(Error::Errno(err))
+    } else {
         Ok(())
     }
 }
@@ -97,23 +120,6 @@ pub fn getgroups() -> Result<Vec<gid_t>, Error> {
             .map(|i| unsafe { gids.get_unchecked(i as usize) }.to_owned())
             .collect();
         Ok(groups)
-    }
-}
-
-
-/// Set the supplemental groups.
-///
-/// ```no_run
-/// boxxy::ffi::setgroups(vec![1,2,3]).unwrap();
-/// ```
-pub fn setgroups(groups: Vec<gid_t>) -> Result<(), Error> {
-    let ret = unsafe { libc::setgroups(groups.len(), groups.as_ptr()) };
-
-    if ret < 0 {
-        let err = errno();
-        Err(Error::Errno(err))
-    } else {
-        Ok(())
     }
 }
 
