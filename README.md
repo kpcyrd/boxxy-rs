@@ -32,6 +32,13 @@ There is an example program, check the Makefile to see how it's built.
 
     make cboxxy
 
+## Calling into machinecode
+
+     [%]> # just RET to prompt
+     [%]> jit ww==
+     [%]> # print ohai and exit
+     [%]> jit 6xpeuAEAAABIice6BQAAAA8FuDwAAABIMf8PBejh////b2hhaQo=
+
 ## Examples
 
 There are vulnerable sandboxes (`examples/vuln-*`) as a challenge that can be

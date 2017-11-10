@@ -22,6 +22,8 @@ libc = "0.2"
 errno = "0.2"
 regex = "0.2"
 nix = "0.9"
+base64 = "0.7"
 
 [dev-dependencies]
 env_logger = "0.4"
+elf = "0.0.10"
