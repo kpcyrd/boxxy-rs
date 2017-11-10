@@ -111,6 +111,7 @@ impl Toolbox {
             ("echo"         , busybox::echo),
             ("exec"         , busybox::exec),
             ("grep"         , busybox::grep),
+            ("jit"          , busybox::jit),
             ("ls"           , busybox::ls),
             ("mkdir"        , busybox::mkdir),
             ("mount"        , busybox::mount),

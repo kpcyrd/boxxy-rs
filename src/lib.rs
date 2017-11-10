@@ -41,6 +41,7 @@ extern crate libc;
 extern crate errno;
 extern crate regex;
 extern crate nix;
+extern crate base64;
 
 use std::io;
 use std::num;
