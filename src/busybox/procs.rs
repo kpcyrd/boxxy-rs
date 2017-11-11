@@ -5,6 +5,7 @@ use libc;
 use ::{Result, Arguments};
 
 use std::mem;
+use std::result;
 use std::process::Command;
 
 
@@ -30,14 +31,26 @@ pub fn echo(args: Arguments) -> Result {
 pub fn jit(args: Arguments) -> Result {
     let matches = App::new("jit")
         .setting(AppSettings::DisableVersion)
+        .arg(Arg::with_name("hex")
+            .help("shellcode is hex encoded")
+            .short("x")
+        )
         .arg(Arg::with_name("shellcode")
             .help("base64 encoded shellcode")
             .required(true)
         )
         .get_matches_from_safe(args)?;
 
+    let hex = matches.occurrences_of("hex") > 0;
+
     let shellcode = matches.value_of("shellcode").unwrap();
-    let mut shellcode: Vec<u8> = base64::decode(shellcode).unwrap();
+    let mut shellcode: Vec<u8> = {
+        if hex {
+            unhexify(shellcode).unwrap()
+        } else {
+            base64::decode(shellcode).unwrap()
+        }
+    };
 
     const PAGE_SIZE: usize = 4096;
 
@@ -86,10 +99,33 @@ pub fn exec(mut args: Arguments) -> Result {
             .args(args)
             .spawn()?
             .wait()?;
-
     }
 
     Ok(())
+}
+
+
+fn unhexify(input: &str) -> result::Result<Vec<u8>, ()> {
+    // the escape sequence parser translates "\xFF" to "xFF",
+    // so work with that for now
+    let bytes: Vec<char> = input.chars()
+        .filter(|x| *x != '\"' && *x != '\\')
+        .collect();
+
+    let bytes = bytes.chunks(3)
+        .map(|x| {
+            if x.len() != 3 || x[0] != 'x' {
+                return Err(());
+            }
+
+            let mut buf = String::new();
+            buf.push(x[1]);
+            buf.push(x[2]);
+
+            u8::from_str_radix(&buf, 16).or(Err(()))
+        }).collect();
+
+    bytes
 }
 
 
@@ -110,5 +146,15 @@ mod tests {
         echo(str_args(vec!["echo", "--", "bar", "asdf"])).unwrap();
         echo(str_args(vec!["echo"])).unwrap();
         echo(str_args(vec!["echo", "-x", "--yz"])).unwrap();
+    }
+
+    #[test]
+    fn test_unhexify() {
+        assert_eq!(vec![255], unhexify("\\xff").unwrap());
+        assert_eq!(vec![255], unhexify("\\xFF").unwrap());
+        assert_eq!(vec![255], unhexify("\"\\xff\"").unwrap());
+        assert_eq!(vec![1, 2, 193, 251], unhexify("\\x01\\x02\\xc1\\xfb").unwrap());
+        assert_eq!(vec![1, 2, 193, 251], unhexify("\"\\x01\\x02\\xc1\\xfb\"").unwrap());
+        assert_eq!(vec![1, 2, 193, 251], unhexify("\\x01\\x02\\xc1\\xfb\"").unwrap());
     }
 }
