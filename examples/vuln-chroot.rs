@@ -6,6 +6,7 @@ extern crate errno;
 use std::env;
 use std::ffi::CString;
 
+#[cfg(unix)]
 fn chroot(path: &str) -> Result<(), errno::Errno> {
     let path = CString::new(path).unwrap();
     let ret = unsafe { libc::chroot(path.as_ptr()) };
@@ -17,10 +18,12 @@ fn chroot(path: &str) -> Result<(), errno::Errno> {
     }
 }
 
+#[cfg(unix)]
 fn getuid() -> libc::uid_t {
     unsafe { libc::getuid() }
 }
 
+#[cfg(unix)]
 fn main() {
     if getuid() != 0 {
         println!("Error: this challenge needs root to set up");
@@ -40,4 +43,9 @@ fn main() {
     println!("[+] jail is active, can you escape it?");
 
     boxxy::Shell::new(boxxy::Toolbox::new()).run()
+}
+
+#[cfg(not(unix))]
+fn main() {
+    panic!("unsupported plattform");
 }
