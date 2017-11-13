@@ -155,6 +155,7 @@ mod tests {
     use libc;
 
     #[test]
+    #[cfg(target_os="linux")]
     fn test_getresuid() {
         let ruid1 = unsafe { libc::getuid() };
         let euid1 = unsafe { libc::geteuid() };
@@ -165,6 +166,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(target_os="linux")]
     fn test_getresgid() {
         let rgid1 = unsafe { libc::getgid() };
         let egid1 = unsafe { libc::getegid() };
