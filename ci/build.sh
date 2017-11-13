@@ -8,12 +8,6 @@ case "$TRAVIS_OS_NAME-$TARGET" in
         export PATH="$PATH:$PWD/ci/dummy"
         cargo build --release --verbose --target="$TARGET"
         ;;
-    osx-x86_64-apple-darwin|linux-i686-pc-windows-gnu)
-        cargo build --release --verbose --target="$TARGET"
-        for x in boxxy; do
-            cargo build --example "$x" --release --verbose --target="$TARGET"
-        done
-        ;;
     *)
         cargo build --release --verbose --target="$TARGET"
         cargo build --examples --release --verbose --target="$TARGET"
