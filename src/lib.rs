@@ -48,6 +48,15 @@ extern crate bufstream;
 extern crate webpki;
 extern crate crypto as rust_crypto;
 
+#[cfg(feature="network")]
+extern crate hyper;
+#[cfg(feature="network")]
+extern crate hyper_rustls;
+#[cfg(feature="network")]
+extern crate tokio_core;
+#[cfg(feature="network")]
+extern crate futures;
+
 use std::io;
 use std::num;
 

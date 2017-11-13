@@ -14,6 +14,10 @@ crate-type = ["lib", "dylib", "staticlib"]
 [badges]
 travis-ci = { repository = "kpcyrd/boxxy-rs" }
 
+[features]
+default = ["network"]
+network = ["hyper", "hyper-rustls", "tokio-core", "futures"]
+
 [dependencies]
 rustyline = "1.0.0"
 log = "0.3"
@@ -28,6 +32,11 @@ rustls = { version = "0.11", features = ["dangerous_configuration"] }
 bufstream = "0.1"
 rust-crypto = "0.2"
 webpki = "0.17"
+
+hyper = { version = "0.11", optional = true }
+hyper-rustls = { version = "0.11", optional = true }
+tokio-core = { version = "0.1", optional = true }
+futures = { version = "0.1", optional = true }
 
 [dev-dependencies]
 env_logger = "0.4"

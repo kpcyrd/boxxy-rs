@@ -138,6 +138,11 @@ impl Toolbox {
             ("setreuid"     , busybox::setreuid),
         ]);
 
+        #[cfg(feature="network")]
+        toolbox.insert_many_native(vec![
+            ("curl"         , busybox::curl),
+        ]);
+
         toolbox
     }
 
