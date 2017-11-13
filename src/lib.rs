@@ -42,6 +42,7 @@ extern crate errno;
 extern crate regex;
 extern crate nix;
 extern crate base64;
+#[macro_use] extern crate cfg_if;
 
 use std::io;
 use std::num;

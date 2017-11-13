@@ -9,6 +9,16 @@ use std::ffi::CString;
 pub mod exports;
 pub use self::exports::*;
 
+#[cfg(target_os="linux")]
+#[path="linux.rs"]
+mod native;
+
+#[cfg(target_os="macos")]
+#[path="macos.rs"]
+mod native;
+
+pub use self::native::*;
+
 
 #[derive(Debug)]
 pub struct ForeignCommand(extern fn(usize, *const *const i8) -> i32);
@@ -33,12 +43,38 @@ impl ForeignCommand {
 }
 
 
+
+pub fn getuid() -> Result<uid_t, Error> {
+    let uid = unsafe { libc::getuid() };
+    Ok(uid)
+}
+
+
+pub fn geteuid() -> Result<uid_t, Error> {
+    let euid = unsafe { libc::geteuid() };
+    Ok(euid)
+}
+
+
+pub fn setuid(uid: uid_t) -> Result<(), Error> {
+    let ret = unsafe { libc::setuid(uid) };
+
+    if ret != 0 {
+        let err = errno();
+        Err(Error::Errno(err))
+    } else {
+        Ok(())
+    }
+}
+
+
 /// Get the real uid, effective uid and saved uid.
 ///
 /// ```
 /// let (ruid, euid, suid) = boxxy::ffi::getresuid().unwrap();
 /// println!("ruid={}, euid={}, suid={}", ruid, euid, suid);
 /// ```
+#[cfg(target_os="linux")]
 pub fn getresuid() -> Result<(uid_t, uid_t, uid_t), Error> {
     let mut ruid: uid_t = 0;
     let mut euid: uid_t = 0;
@@ -55,12 +91,24 @@ pub fn getresuid() -> Result<(uid_t, uid_t, uid_t), Error> {
 }
 
 
+pub fn getgid() -> Result<uid_t, Error> {
+    let gid = unsafe { libc::getgid() };
+    Ok(gid)
+}
+
+
+pub fn getegid() -> Result<uid_t, Error> {
+    let egid = unsafe { libc::getegid() };
+    Ok(egid)
+}
+
 /// Get the real gid, effective gid and saved gid.
 ///
 /// ```
 /// let (rgid, egid, sgid) = boxxy::ffi::getresgid().unwrap();
 /// println!("rgid={}, egid={}, sgid={}", rgid, egid, sgid);
 /// ```
+#[cfg(target_os="linux")]
 pub fn getresgid() -> Result<(gid_t, gid_t, gid_t), Error> {
     let mut rgid: gid_t = 0;
     let mut egid: gid_t = 0;
@@ -101,29 +149,13 @@ pub fn getgroups() -> Result<Vec<gid_t>, Error> {
 }
 
 
-/// Set the supplemental groups.
-///
-/// ```no_run
-/// boxxy::ffi::setgroups(vec![1,2,3]).unwrap();
-/// ```
-pub fn setgroups(groups: Vec<gid_t>) -> Result<(), Error> {
-    let ret = unsafe { libc::setgroups(groups.len(), groups.as_ptr()) };
-
-    if ret < 0 {
-        let err = errno();
-        Err(Error::Errno(err))
-    } else {
-        Ok(())
-    }
-}
-
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use libc;
 
     #[test]
+    #[cfg(target_os="linux")]
     fn test_getresuid() {
         let ruid1 = unsafe { libc::getuid() };
         let euid1 = unsafe { libc::geteuid() };
@@ -134,6 +166,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(target_os="linux")]
     fn test_getresgid() {
         let rgid1 = unsafe { libc::getgid() };
         let egid1 = unsafe { libc::getegid() };
