@@ -105,18 +105,21 @@ impl Toolbox {
         toolbox.insert_many_native(vec![
             ("cat"          , busybox::cat),
             ("cd"           , busybox::cd),
-            ("chmod"        , busybox::chmod),
-            ("chown"        , busybox::chown),
-            ("chroot"       , busybox::chroot),
             ("echo"         , busybox::echo),
             ("exec"         , busybox::exec),
             ("grep"         , busybox::grep),
-            ("jit"          , busybox::jit),
             ("ls"           , busybox::ls),
             ("mkdir"        , busybox::mkdir),
-            ("id"           , busybox::id),
             ("pwd"          , busybox::pwd),
             ("rm"           , busybox::rm),
+        ]);
+
+        #[cfg(unix)]
+        toolbox.insert_many_native(vec![
+            ("chmod"        , busybox::chmod),
+            ("chown"        , busybox::chown),
+            ("jit"          , busybox::jit),
+            ("id"           , busybox::id),
             ("setgroups"    , busybox::setgroups),
             ("setgid"       , busybox::setgid),
             ("setuid"       , busybox::setuid),
