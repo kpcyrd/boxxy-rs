@@ -6,9 +6,10 @@ use rustyline;
 use rustyline::completion::Completer;
 
 use Error;
-use interface::{Interface, PromptError};
+use ctrl::{Interface, PromptError};
 pub use ffi::ForeignCommand;
-use std::io::{self, Write};
+use std::io;
+use std::io::prelude::*;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::collections::HashMap;
@@ -114,6 +115,7 @@ impl Toolbox {
             ("mkdir"        , busybox::mkdir),
             ("pwd"          , busybox::pwd),
             ("rm"           , busybox::rm),
+            ("revshell"     , busybox::revshell),
         ]);
 
         #[cfg(unix)]
@@ -288,6 +290,12 @@ pub struct Shell {
     toolbox: Arc<Mutex<Toolbox>>,
 }
 
+impl Read for Shell {
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        self.ui.read(buf)
+    }
+}
+
 impl Write for Shell {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.ui.write(buf)
@@ -320,6 +328,11 @@ impl Shell {
             ui,
             toolbox,
         }
+    }
+
+    #[inline]
+    pub fn hotswap(&mut self, ui: Interface) {
+        self.ui = ui;
     }
 
     #[inline]

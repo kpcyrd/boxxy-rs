@@ -82,6 +82,7 @@ pub fn jit(sh: &mut Shell, args: Arguments) -> Result {
 }
 
 
+// TODO: i/o isn't redirected
 pub fn exec(_sh: &mut Shell, mut args: Arguments) -> Result {
     if args.len() < 2 {
         // triggers an usage errror

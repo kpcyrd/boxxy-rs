@@ -43,15 +43,19 @@ extern crate regex;
 extern crate nix;
 extern crate base64;
 #[macro_use] extern crate cfg_if;
+extern crate rustls;
 extern crate bufstream;
+extern crate webpki;
+extern crate crypto as rust_crypto;
 
 use std::io;
 use std::num;
 
 #[macro_use] mod macros;
 pub mod busybox;
+pub mod crypto;
+pub mod ctrl;
 pub mod ffi;
-pub mod interface;
 pub mod shell;
 
 pub use shell::{Shell, Toolbox};

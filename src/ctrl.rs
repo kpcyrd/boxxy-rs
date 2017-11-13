@@ -1,14 +1,13 @@
 use Toolbox;
 use shell::CmdCompleter;
+use crypto::OwnedTlsStream;
 use rustyline::{self, Editor};
 
 use std::sync::Arc;
 use std::sync::Mutex;
 use bufstream::BufStream;
-use std::fs::File; // TODO: remove
 use std::io;
 use std::io::prelude::*;
-use std::io::Stdout;
 use std::io::BufReader;
 
 
@@ -39,9 +38,9 @@ impl From<io::Error> for PromptError {
 
 #[derive(Debug)]
 pub enum Interface {
-    Fancy((Stdout, Editor<CmdCompleter>)),
+    Fancy((io::Stdin, io::Stdout, Editor<CmdCompleter>)),
     Stdio((BufReader<io::Stdin>, io::Stdout)),
-    Stream(BufStream<File>),
+    Tls(BufStream<OwnedTlsStream>),
 }
 
 impl Interface {
@@ -50,7 +49,7 @@ impl Interface {
         let c = CmdCompleter::new(toolbox);
         rl.set_completer(Some(c));
 
-        Interface::Fancy((io::stdout(), rl))
+        Interface::Fancy((io::stdin(), io::stdout(), rl))
     }
 
     pub fn stdio() -> Interface {
@@ -60,7 +59,7 @@ impl Interface {
     pub fn readline(&mut self, prompt: &str) -> Result<String, PromptError> {
         match *self {
             Interface::Fancy(ref mut x) => {
-                let buf = x.1.readline(prompt)?;
+                let buf = x.2.readline(prompt)?;
                 Ok(buf)
             },
             Interface::Stdio(ref mut x) => {
@@ -78,7 +77,7 @@ impl Interface {
 
                 Ok(buf)
             },
-            Interface::Stream(ref mut x) => {
+            Interface::Tls(ref mut x) => {
                 x.write(prompt.as_bytes()).unwrap();
                 x.flush().unwrap();
 
@@ -98,8 +97,18 @@ impl Interface {
 
     pub fn add_history_entry(&mut self, line: &str) -> bool {
         match *self {
-            Interface::Fancy(ref mut x) => x.1.add_history_entry(line),
+            Interface::Fancy(ref mut x) => x.2.add_history_entry(line),
             _ => true,
+        }
+    }
+}
+
+impl Read for Interface {
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        match *self {
+            Interface::Fancy(ref mut x) => x.0.read(buf),
+            Interface::Stdio(ref mut x) => x.0.read(buf),
+            Interface::Tls(ref mut x) => x.read(buf),
         }
     }
 }
@@ -107,17 +116,17 @@ impl Interface {
 impl Write for Interface {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         match *self {
-            Interface::Fancy(ref mut x) => x.0.write(buf),
+            Interface::Fancy(ref mut x) => x.1.write(buf),
             Interface::Stdio(ref mut x) => x.1.write(buf),
-            Interface::Stream(ref mut x) => x.write(buf),
+            Interface::Tls(ref mut x) => x.write(buf),
         }
     }
 
     fn flush(&mut self) -> io::Result<()> {
         match *self {
-            Interface::Fancy(ref mut x) => x.0.flush(),
+            Interface::Fancy(ref mut x) => x.1.flush(),
             Interface::Stdio(ref mut x) => x.1.flush(),
-            Interface::Stream(ref mut x) => x.flush(),
+            Interface::Tls(ref mut x) => x.flush(),
         }
     }
 }
