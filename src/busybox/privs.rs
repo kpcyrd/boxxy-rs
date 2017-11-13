@@ -29,7 +29,7 @@ cfg_if! {
 
             Ok(())
         }
-    } else {
+    } else if #[cfg(unix)] {
         pub fn id(_args: Arguments) -> Result {
             let ruid = ffi::getuid().unwrap();
             let euid = ffi::geteuid().unwrap();
@@ -54,6 +54,7 @@ cfg_if! {
 }
 
 
+#[cfg(unix)]
 pub fn setuid(args: Arguments) -> Result {
     let matches = App::new("setuid")
         .setting(AppSettings::DisableVersion)
@@ -66,6 +67,7 @@ pub fn setuid(args: Arguments) -> Result {
 }
 
 
+#[cfg(unix)]
 pub fn seteuid(args: Arguments) -> Result {
     let matches = App::new("seteuid")
         .setting(AppSettings::DisableVersion)
@@ -131,6 +133,7 @@ pub fn setresuid(args: Arguments) -> Result {
 }
 
 
+#[cfg(unix)]
 pub fn setgid(args: Arguments) -> Result {
     let matches = App::new("setgid")
         .setting(AppSettings::DisableVersion)
@@ -177,6 +180,7 @@ pub fn setresgid(args: Arguments) -> Result {
 }
 
 
+#[cfg(unix)]
 pub fn setgroups(args: Arguments) -> Result {
     let matches = App::new("setgroups")
         .setting(AppSettings::DisableVersion)

@@ -1,7 +1,9 @@
-# boxxy-rs [![Build Status][travis-img]][travis] [![crates.io][crates-img]][crates] [![docs.rs][docs-img]][docs]
+# boxxy-rs [![Build Status][travis-img]][travis] [![Build status][appveyor-img]][appveyor] [![crates.io][crates-img]][crates] [![docs.rs][docs-img]][docs]
 
 [travis-img]:   https://travis-ci.org/kpcyrd/boxxy-rs.svg?branch=master
 [travis]:       https://travis-ci.org/kpcyrd/boxxy-rs
+[appveyor-img]: https://ci.appveyor.com/api/projects/status/yd8xlom2h9v4yi2s/branch/master?svg=true
+[appveyor]:     https://ci.appveyor.com/project/kpcyrd/boxxy-rs/branch/master
 [crates-img]:   https://img.shields.io/crates/v/boxxy.svg
 [crates]:       https://crates.io/crates/boxxy
 [docs-img]:     https://docs.rs/boxxy/badge.svg

@@ -1,5 +1,7 @@
 use clap::{App, Arg, AppSettings};
+#[cfg(unix)]
 use libc::{self, mode_t};
+#[cfg(unix)]
 use errno::errno;
 use regex::Regex;
 #[cfg(target_os="linux")]
@@ -9,10 +11,13 @@ use ::{Result, Error, Arguments};
 
 use std::fs;
 use std::env;
+#[cfg(unix)]
 use std::ffi::CString;
+use std::fs::DirEntry;
 use std::io::BufReader;
 use std::io::prelude::*;
 use std::time::SystemTime;
+#[cfg(unix)]
 use std::os::unix::fs::MetadataExt;
 
 
@@ -61,6 +66,7 @@ pub fn cd(args: Arguments) -> Result {
 }
 
 
+#[cfg(unix)]
 pub fn chmod(args: Arguments) -> Result {
     let matches = App::new("chmod")
         .setting(AppSettings::DisableVersion)
@@ -90,6 +96,7 @@ pub fn chmod(args: Arguments) -> Result {
 }
 
 
+#[cfg(unix)]
 pub fn chown(args: Arguments) -> Result {
     let matches = App::new("chown")
         .setting(AppSettings::DisableVersion)
@@ -120,6 +127,7 @@ pub fn chown(args: Arguments) -> Result {
 }
 
 
+#[cfg(unix)]
 pub fn chroot(args: Arguments) -> Result {
     let matches = App::new("chroot")
         .setting(AppSettings::DisableVersion)
@@ -240,6 +248,29 @@ fn since(time: SystemTime) -> String {
 }
 
 
+cfg_if! {
+    if #[cfg(unix)] {
+        #[inline]
+        fn decorate(entry: &DirEntry) -> String {
+            let meta = entry.metadata().unwrap();
+            format!("{} {:5} {:5}  {:14} {:?}",
+                perms_to_str(meta.is_dir(), meta.mode()), meta.uid(), meta.gid(),
+                meta.modified().map(|x| since(x)).unwrap_or(String::from("-")),
+                entry.path())
+        }
+    } else {
+        #[inline]
+        fn decorate(entry: &DirEntry) -> String {
+            let meta = entry.metadata().unwrap();
+            format!("{} {:5} {:5}  {:14} {:?}",
+                perms_to_str(meta.is_dir(), 0), 0, 0,
+                meta.modified().map(|x| since(x)).unwrap_or(String::from("-")),
+                entry.path())
+        }
+    }
+}
+
+
 pub fn ls(args: Arguments) -> Result {
     let matches = App::new("ls")
         .setting(AppSettings::DisableVersion)
@@ -265,11 +296,7 @@ pub fn ls(args: Arguments) -> Result {
                 for entry in entries {
                     let entry = entry.unwrap();
                     if long {
-                        let meta = entry.metadata().unwrap();
-                        println!("{} {:5} {:5}  {:14} {:?}",
-                            perms_to_str(meta.is_dir(), meta.mode()), meta.uid(), meta.gid(),
-                            meta.modified().map(|x| since(x)).unwrap_or(String::from("-")),
-                            entry.path());
+                        println!("{}", decorate(&entry));
                     } else {
                         println!("{:?}", entry.path());
                     }

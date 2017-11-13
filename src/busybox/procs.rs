@@ -1,9 +1,12 @@
 use clap::{App, Arg, AppSettings};
+#[cfg(unix)]
 use base64;
+#[cfg(unix)]
 use libc;
 
 use ::{Result, Arguments};
 
+#[cfg(unix)]
 use std::mem;
 use std::result;
 use std::process::Command;
@@ -28,6 +31,7 @@ pub fn echo(args: Arguments) -> Result {
 }
 
 
+#[cfg(unix)]
 pub fn jit(args: Arguments) -> Result {
     let matches = App::new("jit")
         .setting(AppSettings::DisableVersion)

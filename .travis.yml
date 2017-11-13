@@ -1,16 +1,28 @@
 language: rust
 
-os:
-- linux
-- osx
-
-rust:
-  - stable
-  - beta
-  - nightly
-
 matrix:
-  fast_finish: true
-  allow_failures:
-    - rust: nightly
-    - os: osx
+  include:
+  - os: linux
+    rust: stable
+    env: TARGET=x86_64-unknown-linux-gnu
+  - os: linux
+    rust: stable
+    env: TARGET=i686-pc-windows-gnu
+  - os: linux
+    rust: stable
+    env: TARGET=x86_64-apple-darwin
+  - os: linux
+    rust: stable
+    env: TARGET=i686-unknown-linux-gnu
+  #- os: osx
+  #  rust: stable
+  #  env: TARGET=x86_64-apple-darwin
+
+before_install:
+- sudo ci/install.sh "$TARGET"
+install:
+- rustup install "$TRAVIS_RUST_VERSION-$TARGET"
+- rustup target add "$TARGET" || true
+script:
+- ci/build.sh
+- ci/test.sh
