@@ -7,18 +7,24 @@ pub mod exports;
 pub use self::exports::*;
 
 #[cfg(target_os="linux")]
-#[path="linux.rs"]
-mod native;
+mod linux;
+#[cfg(target_os="linux")]
+pub use self::linux::*;
 
-#[cfg(target_os="macos")]
-#[path="macos.rs"]
-mod native;
+#[cfg(macos)]
+mod macos;
+#[cfg(macos)]
+pub use self::macos::*;
 
-#[cfg(target_os="windows")]
-#[path="windows.rs"]
-mod native;
+#[cfg(windows)]
+mod windows;
+#[cfg(windows)]
+pub use self::windows::*;
 
-pub use self::native::*;
+#[cfg(not(any(windows, target_os="linux")))]
+mod notlinux;
+#[cfg(not(any(windows, target_os="linux")))]
+pub use self::notlinux::*;
 
 #[cfg(unix)]
 mod unix;
