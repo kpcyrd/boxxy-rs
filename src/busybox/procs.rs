@@ -4,7 +4,7 @@ use base64;
 #[cfg(unix)]
 use libc;
 
-use ::{Result, Arguments};
+use ::{Result, Shell, Arguments};
 
 #[cfg(unix)]
 use std::mem;
@@ -12,7 +12,7 @@ use std::result;
 use std::process::Command;
 
 
-pub fn echo(args: Arguments) -> Result {
+pub fn echo(sh: &mut Shell, args: Arguments) -> Result {
     let msg = match args.len() {
         0 | 1 => String::new(),
         _ => {
@@ -25,14 +25,14 @@ pub fn echo(args: Arguments) -> Result {
         },
     };
 
-    println!("{}", msg);
+    shprintln!(sh, "{}", msg);
 
     Ok(())
 }
 
 
 #[cfg(unix)]
-pub fn jit(args: Arguments) -> Result {
+pub fn jit(sh: &mut Shell, args: Arguments) -> Result {
     let matches = App::new("jit")
         .setting(AppSettings::DisableVersion)
         .arg(Arg::with_name("hex")
@@ -67,7 +67,7 @@ pub fn jit(args: Arguments) -> Result {
     unsafe { libc::memcpy(page, shellcode.as_mut_ptr() as *mut libc::c_void, shellcode.len()) };
     unsafe { libc::mprotect(page, size, libc::PROT_READ | libc::PROT_EXEC) };
 
-    println!("shellcode: {:?} ({} bytes) \"{}\"", shellcode.as_ptr(), shellcode.len(), shellcode.iter()
+    shprintln!(sh, "shellcode: {:?} ({} bytes) \"{}\"", shellcode.as_ptr(), shellcode.len(), shellcode.iter()
         .fold(String::new(), |a, b| {
             a + &format!("\\x{:02X}", b)
         }));
@@ -82,7 +82,7 @@ pub fn jit(args: Arguments) -> Result {
 }
 
 
-pub fn exec(mut args: Arguments) -> Result {
+pub fn exec(_sh: &mut Shell, mut args: Arguments) -> Result {
     if args.len() < 2 {
         // triggers an usage errror
         let _ = App::new("exec")
@@ -136,6 +136,7 @@ fn unhexify(input: &str) -> result::Result<Vec<u8>, ()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use Toolbox;
 
     #[inline]
     fn str_args(args: Vec<&str>) -> Arguments {
@@ -146,10 +147,11 @@ mod tests {
 
     #[test]
     fn test_echo() {
-        echo(str_args(vec!["echo", "foo"])).unwrap();
-        echo(str_args(vec!["echo", "--", "bar", "asdf"])).unwrap();
-        echo(str_args(vec!["echo"])).unwrap();
-        echo(str_args(vec!["echo", "-x", "--yz"])).unwrap();
+        let mut sh = Shell::new(Toolbox::empty());
+        echo(&mut sh, str_args(vec!["echo", "foo"])).unwrap();
+        echo(&mut sh, str_args(vec!["echo", "--", "bar", "asdf"])).unwrap();
+        echo(&mut sh, str_args(vec!["echo"])).unwrap();
+        echo(&mut sh, str_args(vec!["echo", "-x", "--yz"])).unwrap();
     }
 
     #[test]

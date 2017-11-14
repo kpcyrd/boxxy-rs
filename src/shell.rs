@@ -2,30 +2,32 @@
 
 use busybox;
 use clap;
-use rustyline::{self, Editor};
+use rustyline;
 use rustyline::completion::Completer;
 
 use Error;
+use interface::{Interface, PromptError};
 pub use ffi::ForeignCommand;
+use std::io::{self, Write};
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::collections::HashMap;
 
 
-#[derive(Debug)]
+#[derive(Clone)]
 pub enum Command {
     Native(NativeCommand),
     Foreign(ForeignCommand),
 }
 
-pub type NativeCommand = fn(Vec<String>) -> Result<(), Error>;
+pub type NativeCommand = fn(&mut Shell, Vec<String>) -> Result<(), Error>;
 
 
 impl Command {
-    fn run(&self, args: Vec<String>) -> Result<(), Error> {
+    fn run(&self, mut sh: &mut Shell, args: Vec<String>) -> Result<(), Error> {
         use self::Command::*;
         match *self {
-            Native(ref func)  => func(args),
+            Native(ref func)  => func(&mut sh, args),
             Foreign(ref func) => func.run(args),
         }
     }
@@ -45,11 +47,11 @@ impl From<ForeignCommand> for Command {
 }
 
 
-struct CmdCompleter(Arc<Mutex<Toolbox>>);
+pub struct CmdCompleter(Arc<Mutex<Toolbox>>);
 
 impl CmdCompleter {
     #[inline]
-    fn new(toolbox: Arc<Mutex<Toolbox>>) -> CmdCompleter {
+    pub fn new(toolbox: Arc<Mutex<Toolbox>>) -> CmdCompleter {
         CmdCompleter(toolbox)
     }
 
@@ -143,7 +145,7 @@ impl Toolbox {
     /// use boxxy::Toolbox;
     ///
     /// let toolbox = Toolbox::new();
-    /// println!("command: {:?}", toolbox.get("cat"));
+    /// println!("command: {:?}", toolbox.get("cat").is_some());
     /// ```
     #[inline]
     pub fn get(&self, key: &str) -> Option<&Command> {
@@ -169,16 +171,19 @@ impl Toolbox {
     /// Insert a command into the toolbox.
     ///
     /// ```
+    /// #[macro_use] extern crate boxxy;
     /// use boxxy::{Toolbox, Command};
     ///
-    /// fn example(args: Vec<String>) -> Result<(), boxxy::Error> {
-    ///     println!("The world is your oyster! {:?}", args);
+    /// fn example(sh: &mut boxxy::Shell, args: Vec<String>) -> Result<(), boxxy::Error> {
+    ///     shprintln!(sh, "The world is your oyster! {:?}", args);
     ///     Ok(())
     /// }
     ///
-    /// let mut toolbox = Toolbox::new();
-    /// toolbox.insert("example", Command::Native(example));
-    /// println!("commands: {:?}", toolbox.keys());
+    /// fn main() {
+    ///     let mut toolbox = Toolbox::new();
+    ///     toolbox.insert("example", Command::Native(example));
+    ///     println!("commands: {:?}", toolbox.keys());
+    /// }
     /// ```
     #[inline]
     pub fn insert<I: Into<String>>(&mut self, key: I, func: Command) {
@@ -188,24 +193,27 @@ impl Toolbox {
     /// Insert many commands into the toolbox.
     ///
     /// ```
+    /// #[macro_use] extern crate boxxy;
     /// use boxxy::{Toolbox, Command};
     ///
-    /// fn example1(_args: Vec<String>) -> Result<(), boxxy::Error> {
-    ///     println!("example1");
+    /// fn example1(sh: &mut boxxy::Shell, _args: Vec<String>) -> Result<(), boxxy::Error> {
+    ///     shprintln!(sh, "example1");
     ///     Ok(())
     /// }
     ///
-    /// fn example2(_args: Vec<String>) -> Result<(), boxxy::Error> {
-    ///     println!("example2");
+    /// fn example2(sh: &mut boxxy::Shell, _args: Vec<String>) -> Result<(), boxxy::Error> {
+    ///     shprintln!(sh, "example2");
     ///     Ok(())
     /// }
     ///
-    /// let mut toolbox = Toolbox::new();
-    /// toolbox.insert_many(vec![
-    ///     ("example1", Command::Native(example1)),
-    ///     ("example2", Command::Native(example2)),
-    /// ]);
-    /// println!("commands: {:?}", toolbox.keys());
+    /// fn main() {
+    ///     let mut toolbox = Toolbox::new();
+    ///     toolbox.insert_many(vec![
+    ///         ("example1", Command::Native(example1)),
+    ///         ("example2", Command::Native(example2)),
+    ///     ]);
+    ///     println!("commands: {:?}", toolbox.keys());
+    /// }
     /// ```
     #[inline]
     pub fn insert_many<I: Into<String>>(&mut self, commands: Vec<(I, Command)>) {
@@ -219,24 +227,27 @@ impl Toolbox {
     /// [`NativeCommand`]: struct.NativeCommand.html
     ///
     /// ```
+    /// #[macro_use] extern crate boxxy;
     /// use boxxy::Toolbox;
     ///
-    /// fn example1(_args: Vec<String>) -> Result<(), boxxy::Error> {
-    ///     println!("example1");
+    /// fn example1(sh: &mut boxxy::Shell, _args: Vec<String>) -> Result<(), boxxy::Error> {
+    ///     shprintln!(sh, "example1");
     ///     Ok(())
     /// }
     ///
-    /// fn example2(_args: Vec<String>) -> Result<(), boxxy::Error> {
-    ///     println!("example2");
+    /// fn example2(sh: &mut boxxy::Shell, _args: Vec<String>) -> Result<(), boxxy::Error> {
+    ///     shprintln!(sh, "example2");
     ///     Ok(())
     /// }
     ///
-    /// let mut toolbox = Toolbox::new();
-    /// toolbox.insert_many_native(vec![
-    ///     ("example1", example1),
-    ///     ("example2", example2),
-    /// ]);
-    /// println!("commands: {:?}", toolbox.keys());
+    /// fn main() {
+    ///     let mut toolbox = Toolbox::new();
+    ///     toolbox.insert_many_native(vec![
+    ///         ("example1", example1),
+    ///         ("example2", example2),
+    ///     ]);
+    ///     println!("commands: {:?}", toolbox.keys());
+    /// }
     /// ```
     #[inline]
     pub fn insert_many_native<I: Into<String>>(&mut self, commands: Vec<(I, NativeCommand)>) {
@@ -248,17 +259,20 @@ impl Toolbox {
     /// Builder pattern to create a toolbox with custom commands.
     ///
     /// ```
+    /// #[macro_use] extern crate boxxy;
     /// use boxxy::Toolbox;
     ///
-    /// fn example(args: Vec<String>) -> Result<(), boxxy::Error> {
-    ///     println!("The world is your oyster! {:?}", args);
+    /// fn example(sh: &mut boxxy::Shell, args: Vec<String>) -> Result<(), boxxy::Error> {
+    ///     shprintln!(sh, "The world is your oyster! {:?}", args);
     ///     Ok(())
     /// }
     ///
-    /// let toolbox = Toolbox::new().with(vec![
-    ///         ("example", example),
-    ///     ]);
-    /// println!("commands: {:?}", toolbox.keys());
+    /// fn main() {
+    ///    let toolbox = Toolbox::new().with(vec![
+    ///            ("example", example),
+    ///        ]);
+    ///    println!("commands: {:?}", toolbox.keys());
+    /// }
     /// ```
     #[inline]
     pub fn with<I: Into<String>>(mut self, commands: Vec<(I, NativeCommand)>) -> Toolbox {
@@ -270,8 +284,18 @@ impl Toolbox {
 
 /// The struct that keeps track of the user interface.
 pub struct Shell {
-    rl: Editor<CmdCompleter>,
+    ui: Interface,
     toolbox: Arc<Mutex<Toolbox>>,
+}
+
+impl Write for Shell {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.ui.write(buf)
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        self.ui.flush()
+    }
 }
 
 impl Shell {
@@ -289,12 +313,11 @@ impl Shell {
     pub fn new(toolbox: Toolbox) -> Shell {
         let toolbox = Arc::new(Mutex::new(toolbox));
 
-        let mut rl = Editor::new();
-        let c = CmdCompleter::new(toolbox.clone());
-        rl.set_completer(Some(c));
+        let ui = Interface::fancy(toolbox.clone());
+        // let ui = Interface::stdio();
 
         Shell {
-            rl,
+            ui,
             toolbox,
         }
     }
@@ -305,11 +328,19 @@ impl Shell {
         toolbox.insert(name, command);
     }
 
-    fn process(&self, prog: String, args: Vec<String>) {
+    fn process(&mut self, prog: String, args: Vec<String>) {
         debug!("prog: {:?}, args: {:?}", prog, args);
 
-        let result = match self.toolbox.lock().unwrap().get(&prog) {
-            Some(func) => func.run(args),
+        let result: Option<Command> = {
+            let toolbox = self.toolbox.lock().unwrap();
+            match toolbox.get(&prog) {
+                Some(x) => Some(x.clone()),
+                None => None,
+            }
+        };
+
+        let result = match result {
+            Some(func) => func.run(self, args),
             None => Err(Error::Args(clap::Error {
                 message: String::from("\u{1b}[1;31merror:\u{1b}[0m unknown command"),
                 kind: clap::ErrorKind::MissingRequiredArgument,
@@ -319,18 +350,18 @@ impl Shell {
 
         if let Err(err) = result {
             match err {
-                Error::Args(err)         => println!("{}", err.message),
-                Error::Io(err)           => println!("error: {:?}", err),
-                Error::Errno(err)        => println!("error: {:?}", err),
-                Error::InvalidNum(err)   => println!("error: {:?}", err),
-                Error::InvalidRegex(err) => println!("error: {:?}", err),
+                Error::Args(err)         => shprintln!(self, "{}", err.message),
+                Error::Io(err)           => shprintln!(self, "error: {:?}", err),
+                Error::Errno(err)        => shprintln!(self, "error: {:?}", err),
+                Error::InvalidNum(err)   => shprintln!(self, "error: {:?}", err),
+                Error::InvalidRegex(err) => shprintln!(self, "error: {:?}", err),
             }
         }
     }
 
     #[inline]
-    fn prompt(&mut self) -> Result<String, rustyline::error::ReadlineError> {
-        self.rl.readline(" [%]> ")
+    fn prompt(&mut self) -> Result<String, PromptError> {
+        self.ui.readline(" [%]> ")
     }
 
     #[inline]
@@ -339,7 +370,7 @@ impl Shell {
 
         match readline {
             Ok(line) => {
-                self.rl.add_history_entry(line.as_ref());
+                self.ui.add_history_entry(line.as_ref());
                 Ok(parse_line(&line))
             },
             Err(_) => Err(()),
@@ -347,7 +378,7 @@ impl Shell {
     }
 
     #[inline]
-    pub fn exec_once(&self, line: &str) {
+    pub fn exec_once(&mut self, line: &str) {
         if let Some((prog, args)) = parse_line(line) {
             self.process(prog, args);
         }

@@ -24,6 +24,7 @@ regex = "0.2"
 nix = "0.9"
 base64 = "0.7"
 cfg-if = "0.1"
+bufstream = "0.1"
 
 [dev-dependencies]
 env_logger = "0.4"

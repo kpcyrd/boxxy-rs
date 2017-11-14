@@ -9,17 +9,17 @@
 //! # Example
 //!
 //! ```
-//! extern crate boxxy;
+//! #[macro_use] extern crate boxxy;
 //! extern crate env_logger;
 //!
-//! fn stage1(args: Vec<String>) -> Result<(), boxxy::Error> {
-//!     println!("init stage 1! {:?}", args);
+//! fn stage1(sh: &mut boxxy::Shell, args: Vec<String>) -> Result<(), boxxy::Error> {
+//!     shprintln!(sh, "init stage 1! {:?}", args);
 //!     // your code here
 //!     Ok(())
 //! }
 //!
-//! fn stage2(args: Vec<String>) -> Result<(), boxxy::Error> {
-//!     println!("init stage 2! {:?}", args);
+//! fn stage2(sh: &mut boxxy::Shell, args: Vec<String>) -> Result<(), boxxy::Error> {
+//!     shprintln!(sh, "init stage 2! {:?}", args);
 //!     // your code here
 //!     Ok(())
 //! }
@@ -43,12 +43,15 @@ extern crate regex;
 extern crate nix;
 extern crate base64;
 #[macro_use] extern crate cfg_if;
+extern crate bufstream;
 
 use std::io;
 use std::num;
 
+#[macro_use] mod macros;
 pub mod busybox;
 pub mod ffi;
+pub mod interface;
 pub mod shell;
 
 pub use shell::{Shell, Toolbox};

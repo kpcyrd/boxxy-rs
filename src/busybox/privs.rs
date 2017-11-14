@@ -2,7 +2,7 @@ use clap::{App, Arg, AppSettings};
 use libc::{self, gid_t};
 use errno::errno;
 
-use ::{Result, Error, Arguments};
+use ::{Result, Shell, Error, Arguments};
 use ffi;
 
 use std::result;
@@ -10,13 +10,13 @@ use std::result;
 
 cfg_if! {
     if #[cfg(target_os="linux")] {
-        pub fn id(_args: Arguments) -> Result {
+        pub fn id(sh: &mut Shell, _args: Arguments) -> Result {
             let (ruid, euid, suid) = ffi::getresuid().unwrap();
             let (rgid, egid, sgid) = ffi::getresgid().unwrap();
 
             let groups = ffi::getgroups().unwrap();
 
-            println!(
+            shprintln!(sh,
                 "uid={:?} euid={:?} suid={:?} gid={:?} egid={:?} sgid={:?} groups={:?}",
                 ruid,
                 euid,
@@ -30,7 +30,7 @@ cfg_if! {
             Ok(())
         }
     } else if #[cfg(unix)] {
-        pub fn id(_args: Arguments) -> Result {
+        pub fn id(sh: &mut Shell, _args: Arguments) -> Result {
             let ruid = ffi::getuid().unwrap();
             let euid = ffi::geteuid().unwrap();
 
@@ -39,7 +39,7 @@ cfg_if! {
 
             let groups = ffi::getgroups().unwrap();
 
-            println!(
+            shprintln!(sh,
                 "uid={:?} euid={:?} gid={:?} egid={:?} groups={:?}",
                 ruid,
                 euid,
@@ -55,7 +55,7 @@ cfg_if! {
 
 
 #[cfg(unix)]
-pub fn setuid(args: Arguments) -> Result {
+pub fn setuid(_sh: &mut Shell, args: Arguments) -> Result {
     let matches = App::new("setuid")
         .setting(AppSettings::DisableVersion)
         .arg(Arg::with_name("uid").required(true))
@@ -68,7 +68,7 @@ pub fn setuid(args: Arguments) -> Result {
 
 
 #[cfg(unix)]
-pub fn seteuid(args: Arguments) -> Result {
+pub fn seteuid(_sh: &mut Shell, args: Arguments) -> Result {
     let matches = App::new("seteuid")
         .setting(AppSettings::DisableVersion)
         .arg(Arg::with_name("uid").required(true))
@@ -88,7 +88,7 @@ pub fn seteuid(args: Arguments) -> Result {
 
 
 #[cfg(target_os="linux")]
-pub fn setreuid(args: Arguments) -> Result {
+pub fn setreuid(_sh: &mut Shell, args: Arguments) -> Result {
     let matches = App::new("setreuid")
         .setting(AppSettings::DisableVersion)
         .arg(Arg::with_name("ruid").required(true))
@@ -110,7 +110,7 @@ pub fn setreuid(args: Arguments) -> Result {
 
 
 #[cfg(target_os="linux")]
-pub fn setresuid(args: Arguments) -> Result {
+pub fn setresuid(_sh: &mut Shell, args: Arguments) -> Result {
     let matches = App::new("setresuid")
         .setting(AppSettings::DisableVersion)
         .arg(Arg::with_name("ruid").required(true))
@@ -134,7 +134,7 @@ pub fn setresuid(args: Arguments) -> Result {
 
 
 #[cfg(unix)]
-pub fn setgid(args: Arguments) -> Result {
+pub fn setgid(_sh: &mut Shell, args: Arguments) -> Result {
     let matches = App::new("setgid")
         .setting(AppSettings::DisableVersion)
         .arg(Arg::with_name("gid")
@@ -157,7 +157,7 @@ pub fn setgid(args: Arguments) -> Result {
 
 
 #[cfg(target_os="linux")]
-pub fn setresgid(args: Arguments) -> Result {
+pub fn setresgid(_sh: &mut Shell, args: Arguments) -> Result {
     let matches = App::new("setresgid")
         .setting(AppSettings::DisableVersion)
         .arg(Arg::with_name("rgid").required(true))
@@ -181,7 +181,7 @@ pub fn setresgid(args: Arguments) -> Result {
 
 
 #[cfg(unix)]
-pub fn setgroups(args: Arguments) -> Result {
+pub fn setgroups(_sh: &mut Shell, args: Arguments) -> Result {
     let matches = App::new("setgroups")
         .setting(AppSettings::DisableVersion)
         .arg(Arg::with_name("group")
