@@ -24,6 +24,10 @@ regex = "0.2"
 nix = "0.9"
 base64 = "0.7"
 cfg-if = "0.1"
+rustls = { version = "0.11", features = ["dangerous_configuration"] }
+bufstream = "0.1"
+rust-crypto = "0.2"
+webpki = "0.17"
 
 [dev-dependencies]
 env_logger = "0.4"

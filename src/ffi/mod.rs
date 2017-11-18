@@ -32,7 +32,7 @@ mod unix;
 pub use self::unix::*;
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ForeignCommand(extern fn(usize, *const *const i8) -> i32);
 
 impl ForeignCommand {
