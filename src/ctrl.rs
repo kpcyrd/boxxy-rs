@@ -41,6 +41,7 @@ pub enum Interface {
     Fancy((io::Stdin, io::Stdout, Editor<CmdCompleter>)),
     Stdio((BufReader<io::Stdin>, io::Stdout)),
     Tls(BufStream<OwnedTlsStream>),
+    Dummy(Vec<u8>),
 }
 
 impl Interface {
@@ -54,6 +55,10 @@ impl Interface {
 
     pub fn stdio() -> Interface {
         Interface::Stdio((BufReader::new(io::stdin()), io::stdout()))
+    }
+
+    pub fn dummy() -> Interface {
+        Interface::Dummy(Vec::new())
     }
 
     pub fn readline(&mut self, prompt: &str) -> Result<String, PromptError> {
@@ -92,6 +97,7 @@ impl Interface {
 
                 Ok(buf)
             },
+            Interface::Dummy(ref mut _x) => unimplemented!(),
         }
     }
 
@@ -109,6 +115,7 @@ impl Read for Interface {
             Interface::Fancy(ref mut x) => x.0.read(buf),
             Interface::Stdio(ref mut x) => x.0.read(buf),
             Interface::Tls(ref mut x) => x.read(buf),
+            Interface::Dummy(ref mut _x) => unimplemented!(),
         }
     }
 }
@@ -119,6 +126,7 @@ impl Write for Interface {
             Interface::Fancy(ref mut x) => x.1.write(buf),
             Interface::Stdio(ref mut x) => x.1.write(buf),
             Interface::Tls(ref mut x) => x.write(buf),
+            Interface::Dummy(ref mut x) => x.write(buf),
         }
     }
 
@@ -127,6 +135,7 @@ impl Write for Interface {
             Interface::Fancy(ref mut x) => x.1.flush(),
             Interface::Stdio(ref mut x) => x.1.flush(),
             Interface::Tls(ref mut x) => x.flush(),
+            Interface::Dummy(ref mut x) => x.flush(),
         }
     }
 }

@@ -137,6 +137,7 @@ fn unhexify(input: &str) -> result::Result<Vec<u8>, ()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ctrl;
     use Toolbox;
 
     #[inline]
@@ -149,6 +150,8 @@ mod tests {
     #[test]
     fn test_echo() {
         let mut sh = Shell::new(Toolbox::empty());
+        sh.hotswap(ctrl::Interface::dummy());
+
         echo(&mut sh, str_args(vec!["echo", "foo"])).unwrap();
         echo(&mut sh, str_args(vec!["echo", "--", "bar", "asdf"])).unwrap();
         echo(&mut sh, str_args(vec!["echo"])).unwrap();
