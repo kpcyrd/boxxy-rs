@@ -13,6 +13,8 @@ use ::{Result, Shell, Arguments};
 use ctrl::Interface;
 use crypto::{self, OwnedTlsStream};
 
+use std::fs::File;
+use std::io::prelude::*;
 use std::sync::Arc;
 use std::net::{TcpStream, SocketAddr};
 
@@ -20,10 +22,23 @@ use std::net::{TcpStream, SocketAddr};
 pub fn curl(sh: &mut Shell, args: Arguments) -> Result {
     let matches = App::new("curl")
         .setting(AppSettings::DisableVersion)
+        .arg(Arg::with_name("verbose")
+            .short("v")
+        )
+        .arg(Arg::with_name("output")
+            .short("o")
+            .takes_value(true)
+        )
         .arg(Arg::with_name("url")
             .required(true)
         )
         .get_matches_from_safe(args)?;
+
+    let verbose = matches.occurrences_of("verbose") > 0;
+    let output = matches.value_of("output");
+    // TODO: if -O, use filename from url
+    // TODO: show error if != 200
+    // TODO: if -L, follow redirect
 
     let url = matches.value_of("url").unwrap();
     let url = url.parse().expect("invalid url");
@@ -34,17 +49,35 @@ pub fn curl(sh: &mut Shell, args: Arguments) -> Result {
         .build(&core.handle());
 
     let res = core.run(client.get(url).and_then(|res| {
-        // TODO: if verbose, display headers as well
+        if verbose {
+            for header in res.headers().iter() {
+                shprintln!(sh, "{:?}; {:?}", header.name(), header.raw());
+            }
+
+            if !output.is_some() {
+                shprintln!(sh, "");
+            }
+        }
+
         res.body().concat2()
     })).unwrap();
 
-    // if printing to stdout
-    let res = match String::from_utf8(res.to_vec()) {
-        Ok(res) => format!("{:?}", res),
-        Err(_) => format!("{:?}", res.to_vec()),
-    };
+    match output {
+        Some(path) => {
+            let mut file = File::create(path)?;
+            // TODO: don't buffer the full response
+            file.write(&res.to_vec())?;
+        },
+        None => {
+            // if printing to stdout
+            let res = match String::from_utf8(res.to_vec()) {
+                Ok(res) => format!("{:?}", res),
+                Err(_) => format!("{:?}", res.to_vec()),
+            };
 
-    shprintln!(sh, "{}", res);
+            shprintln!(sh, "{}", res);
+        }
+    };
 
     Ok(())
 }
