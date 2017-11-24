@@ -115,7 +115,6 @@ impl Toolbox {
             ("mkdir"        , busybox::mkdir),
             ("pwd"          , busybox::pwd),
             ("rm"           , busybox::rm),
-            ("revshell"     , busybox::revshell),
         ]);
 
         #[cfg(unix)]
@@ -141,6 +140,7 @@ impl Toolbox {
         #[cfg(feature="network")]
         toolbox.insert_many_native(vec![
             ("curl"         , busybox::curl),
+            ("revshell"     , busybox::revshell),
         ]);
 
         toolbox
