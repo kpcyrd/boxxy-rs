@@ -42,13 +42,17 @@ pub fn curl(sh: &mut Shell, args: Arguments) -> Result {
         .get_matches_from_safe(args)?;
 
     let verbose = matches.occurrences_of("verbose") > 0;
-    let _remote_name = matches.occurrences_of("remote-name") > 0; // TODO: if -O, use filename from url
+    let remote_name = matches.occurrences_of("remote-name") > 0;
     let follow_location = matches.occurrences_of("location") > 0;
-    let output = matches.value_of("output");
+    let mut output = matches.value_of("output").and_then(|x| Some(String::from(x)));
     // TODO: show error if != 200
 
     let url = matches.value_of("url").unwrap();
     let url = url.parse().expect("invalid url");
+
+    if output.is_none() && remote_name {
+        output = Some(filename_from_uri(&url));
+    }
 
     let mut core = reactor::Core::new().unwrap();
     let client = hyper::Client::configure()
@@ -111,7 +115,7 @@ pub fn curl(sh: &mut Shell, args: Arguments) -> Result {
 
     match output {
         Some(path) => {
-            let mut file = File::create(path)?;
+            let mut file = File::create(&path)?;
             // TODO: don't buffer the full response
             file.write(&res.to_vec())?;
             shprintln!(sh, "downloaded to: {:?}", path);
@@ -159,4 +163,43 @@ pub fn revshell(sh: &mut Shell, args: Arguments) -> Result {
     shprintln!(sh, "[+] hot-swapped interface");
 
     Ok(())
+}
+
+
+fn filename_from_uri(uri: &hyper::Uri) -> String {
+    let path = uri.path();
+
+    if let Some(idx) = path.rfind("/") {
+        let (_, path) = path.split_at(idx);
+        let filename = &path[1..];
+
+        if filename == "" {
+            String::from("index.html")
+        } else {
+            String::from(filename)
+        }
+    } else {
+        String::from("index.html")
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_filename_from_uri() {
+        assert_eq!(filename_from_uri(&"https://example.com".parse().unwrap()), "index.html");
+        assert_eq!(filename_from_uri(&"https://example.com/".parse().unwrap()), "index.html");
+        assert_eq!(filename_from_uri(&"https://example.com/foo/".parse().unwrap()), "index.html");
+        assert_eq!(filename_from_uri(&"https://example.com/asdf/foo/".parse().unwrap()), "index.html");
+        assert_eq!(filename_from_uri(&"https://example.com/foo/?a=1".parse().unwrap()), "index.html");
+        assert_eq!(filename_from_uri(&"https://example.com/foo/?a=1#x".parse().unwrap()), "index.html");
+
+        assert_eq!(filename_from_uri(&"https://example.com/foo.txz".parse().unwrap()), "foo.txz");
+        assert_eq!(filename_from_uri(&"https://example.com/asdf/foo.txz".parse().unwrap()), "foo.txz");
+        assert_eq!(filename_from_uri(&"https://example.com/foo.txz?a=1".parse().unwrap()), "foo.txz");
+        assert_eq!(filename_from_uri(&"https://example.com/foo.txz?a=1#x".parse().unwrap()), "foo.txz");
+    }
 }
