@@ -6,6 +6,7 @@ use rustls;
 use bufstream::BufStream;
 
 use tokio_core::reactor;
+use futures;
 use futures::Stream;
 use futures::future::Future;
 
@@ -29,16 +30,22 @@ pub fn curl(sh: &mut Shell, args: Arguments) -> Result {
             .short("o")
             .takes_value(true)
         )
+        .arg(Arg::with_name("remote-name")
+            .short("O")
+        )
+        .arg(Arg::with_name("location")
+            .short("L")
+        )
         .arg(Arg::with_name("url")
             .required(true)
         )
         .get_matches_from_safe(args)?;
 
     let verbose = matches.occurrences_of("verbose") > 0;
+    let _remote_name = matches.occurrences_of("remote-name") > 0; // TODO: if -O, use filename from url
+    let follow_location = matches.occurrences_of("location") > 0;
     let output = matches.value_of("output");
-    // TODO: if -O, use filename from url
     // TODO: show error if != 200
-    // TODO: if -L, follow redirect
 
     let url = matches.value_of("url").unwrap();
     let url = url.parse().expect("invalid url");
@@ -48,25 +55,66 @@ pub fn curl(sh: &mut Shell, args: Arguments) -> Result {
         .connector(HttpsConnector::new(4, &core.handle()))
         .build(&core.handle());
 
-    let res = core.run(client.get(url).and_then(|res| {
-        if verbose {
-            for header in res.headers().iter() {
-                shprintln!(sh, "{:?}; {:?}", header.name(), header.raw());
-            }
+    #[allow(unused_assignments)]
+    let (mut res, mut location) = (None, Some(url));
 
-            if !output.is_some() {
-                shprintln!(sh, "");
-            }
+    let mut max_redirects = 12;
+
+    loop {
+        let url = location.unwrap();
+        if verbose {
+            shprintln!(sh, "requesting: {:?}", url);
         }
 
-        res.body().concat2()
-    })).unwrap();
+        let (inner_res, inner_location) = core.run(client.get(url).and_then(|res| {
+            if verbose {
+                for header in res.headers().iter() {
+                    shprintln!(sh, "  {:?}; {:?}", header.name(), header.raw());
+                }
+
+                if !output.is_some() {
+                    shprintln!(sh, "");
+                }
+            }
+
+            let mut next_location = None;
+            if follow_location && res.status().is_redirection() {
+                use hyper::header::Location;
+
+                if let Some(location) = res.headers().get::<Location>() {
+                    if verbose {
+                        shprintln!(sh, "follow: {:?}", location);
+                    }
+                    next_location = Some(String::from(&location[..]).parse().unwrap());
+                }
+            }
+
+            (res.body().concat2(), futures::future::ok(next_location))
+        })).unwrap();
+
+        res = Some(inner_res);
+        location = inner_location;
+
+        if location.is_none() {
+            break;
+        }
+
+        max_redirects -= 1;
+
+        if max_redirects <= 0 {
+            shprintln!(sh, "max redirects exceeded");
+            break;
+        }
+    }
+
+    let res = res.unwrap();
 
     match output {
         Some(path) => {
             let mut file = File::create(path)?;
             // TODO: don't buffer the full response
             file.write(&res.to_vec())?;
+            shprintln!(sh, "downloaded to: {:?}", path);
         },
         None => {
             // if printing to stdout
