@@ -26,7 +26,7 @@ libc = "0.2"
 errno = "0.2"
 regex = "0.2"
 nix = "0.9"
-base64 = "0.7"
+base64 = "0.8"
 cfg-if = "0.1"
 rustls = { version = "0.11", features = ["dangerous_configuration"] }
 bufstream = "0.1"
