@@ -43,16 +43,31 @@ extern crate regex;
 extern crate nix;
 extern crate base64;
 #[macro_use] extern crate cfg_if;
+
+#[cfg(feature="network")]
 extern crate rustls;
+#[cfg(feature="network")]
 extern crate bufstream;
+#[cfg(feature="network")]
 extern crate webpki;
+#[cfg(feature="network")]
 extern crate crypto as rust_crypto;
+
+#[cfg(feature="network")]
+extern crate hyper;
+#[cfg(feature="network")]
+extern crate hyper_rustls;
+#[cfg(feature="network")]
+extern crate tokio_core;
+#[cfg(feature="network")]
+extern crate futures;
 
 use std::io;
 use std::num;
 
 #[macro_use] mod macros;
 pub mod busybox;
+#[cfg(feature="network")]
 pub mod crypto;
 pub mod ctrl;
 pub mod ffi;

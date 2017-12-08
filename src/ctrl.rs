@@ -1,10 +1,12 @@
 use Toolbox;
 use shell::CmdCompleter;
+#[cfg(feature="network")]
 use crypto::OwnedTlsStream;
 use rustyline::{self, Editor};
 
 use std::sync::Arc;
 use std::sync::Mutex;
+#[cfg(feature="network")]
 use bufstream::BufStream;
 use std::io;
 use std::io::prelude::*;
@@ -40,6 +42,7 @@ impl From<io::Error> for PromptError {
 pub enum Interface {
     Fancy((io::Stdin, io::Stdout, Editor<CmdCompleter>)),
     Stdio((BufReader<io::Stdin>, io::Stdout)),
+    #[cfg(feature="network")]
     Tls(BufStream<OwnedTlsStream>),
     Dummy(Vec<u8>),
 }
@@ -82,6 +85,7 @@ impl Interface {
 
                 Ok(buf)
             },
+            #[cfg(feature="network")]
             Interface::Tls(ref mut x) => {
                 x.write(prompt.as_bytes()).unwrap();
                 x.flush().unwrap();
@@ -114,6 +118,7 @@ impl Read for Interface {
         match *self {
             Interface::Fancy(ref mut x) => x.0.read(buf),
             Interface::Stdio(ref mut x) => x.0.read(buf),
+            #[cfg(feature="network")]
             Interface::Tls(ref mut x) => x.read(buf),
             Interface::Dummy(ref mut _x) => unimplemented!(),
         }
@@ -125,6 +130,7 @@ impl Write for Interface {
         match *self {
             Interface::Fancy(ref mut x) => x.1.write(buf),
             Interface::Stdio(ref mut x) => x.1.write(buf),
+            #[cfg(feature="network")]
             Interface::Tls(ref mut x) => x.write(buf),
             Interface::Dummy(ref mut x) => x.write(buf),
         }
@@ -134,6 +140,7 @@ impl Write for Interface {
         match *self {
             Interface::Fancy(ref mut x) => x.1.flush(),
             Interface::Stdio(ref mut x) => x.1.flush(),
+            #[cfg(feature="network")]
             Interface::Tls(ref mut x) => x.flush(),
             Interface::Dummy(ref mut x) => x.flush(),
         }

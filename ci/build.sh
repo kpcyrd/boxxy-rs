@@ -7,9 +7,11 @@ case "$TRAVIS_OS_NAME-$TARGET" in
         export RUSTFLAGS="-Clinker=true -Car=true"
         export PATH="$PATH:$PWD/ci/dummy"
         cargo build --release --verbose --target="$TARGET"
+        cargo build --release --verbose --target="$TARGET" --no-default-features
         ;;
     *)
         cargo build --release --verbose --target="$TARGET"
+        cargo build --release --verbose --target="$TARGET" --no-default-features
         cargo build --examples --release --verbose --target="$TARGET"
         ;;
 esac
