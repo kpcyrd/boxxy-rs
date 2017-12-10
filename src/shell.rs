@@ -121,6 +121,7 @@ impl Toolbox {
         toolbox.insert_many_native(vec![
             ("chmod"        , busybox::chmod),
             ("chown"        , busybox::chown),
+            ("chroot"       , busybox::chroot),
             ("jit"          , busybox::jit),
             ("id"           , busybox::id),
             ("setgroups"    , busybox::setgroups),
