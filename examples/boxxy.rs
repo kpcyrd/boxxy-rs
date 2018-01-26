@@ -7,7 +7,7 @@ fn example(sh: &mut boxxy::Shell, args: Vec<String>) -> Result<(), boxxy::Error>
 }
 
 fn main() {
-    env_logger::init().unwrap();
+    env_logger::init();
 
     let toolbox = boxxy::Toolbox::new().with(vec![
             ("example", example),

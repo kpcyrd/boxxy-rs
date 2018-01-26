@@ -6,7 +6,7 @@ use clap::{App, Arg};
 
 
 fn main() {
-    env_logger::init().unwrap();
+    env_logger::init();
 
     let matches = App::new("boxxy-ipc")
         .arg(Arg::with_name("path")

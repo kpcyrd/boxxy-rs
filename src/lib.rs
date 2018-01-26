@@ -25,7 +25,7 @@
 //! }
 //!
 //! fn main() {
-//!     env_logger::init().unwrap();
+//!     env_logger::init();
 //!
 //!     let toolbox = boxxy::Toolbox::new().with(vec![
 //!             ("stage1", stage1),
