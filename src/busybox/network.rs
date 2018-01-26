@@ -18,6 +18,8 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::sync::Arc;
 use std::net::{TcpStream, SocketAddr};
+#[cfg(unix)]
+use std::os::unix::net::UnixStream;
 
 
 pub fn curl(sh: &mut Shell, args: Arguments) -> Result {
@@ -160,6 +162,28 @@ pub fn revshell(sh: &mut Shell, args: Arguments) -> Result {
 
     shprintln!(sh, "[*] see you on the other side...");
     sh.hotswap(Interface::Tls(sock));
+    shprintln!(sh, "[+] hot-swapped interface");
+
+    Ok(())
+}
+
+
+#[cfg(unix)]
+pub fn ipcshell(sh: &mut Shell, args: Arguments) -> Result {
+    let matches = App::new("ipcshell")
+        .setting(AppSettings::DisableVersion)
+        .arg(Arg::with_name("path").required(true))
+        .get_matches_from_safe(args)?;
+
+    let path = matches.value_of("path").unwrap();
+
+    shprintln!(sh, "[*] connecting to {}...", path);
+    let sock = UnixStream::connect(&path).unwrap(); // TODO: error handling
+    shprintln!(sh, "[+] connected!");
+    let sock = BufStream::new(sock);
+
+    shprintln!(sh, "[*] see you on the other side...");
+    sh.hotswap(Interface::Ipc(sock));
     shprintln!(sh, "[+] hot-swapped interface");
 
     Ok(())

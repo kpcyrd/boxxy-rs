@@ -11,6 +11,8 @@ use bufstream::BufStream;
 use std::io;
 use std::io::prelude::*;
 use std::io::BufReader;
+#[cfg(all(unix, feature="network"))]
+use std::os::unix::net::UnixStream;
 
 
 #[derive(Debug)]
@@ -44,6 +46,8 @@ pub enum Interface {
     Stdio((BufReader<io::Stdin>, io::Stdout)),
     #[cfg(feature="network")]
     Tls(BufStream<OwnedTlsStream>),
+    #[cfg(all(unix, feature="network"))]
+    Ipc(BufStream<UnixStream>),
     Dummy(Vec<u8>),
 }
 
@@ -101,6 +105,22 @@ impl Interface {
 
                 Ok(buf)
             },
+            #[cfg(all(unix, feature="network"))]
+            Interface::Ipc(ref mut x) => {
+                x.write(prompt.as_bytes()).unwrap();
+                x.flush().unwrap();
+
+                let mut buf = String::new();
+                x.read_line(&mut buf)?;
+
+                if buf.len() == 0 {
+                    return Err(PromptError::Eof)
+                }
+
+                let buf = buf.trim_right().to_owned(); // TODO
+
+                Ok(buf)
+            },
             Interface::Dummy(ref mut _x) => unimplemented!(),
         }
     }
@@ -120,6 +140,8 @@ impl Read for Interface {
             Interface::Stdio(ref mut x) => x.0.read(buf),
             #[cfg(feature="network")]
             Interface::Tls(ref mut x) => x.read(buf),
+            #[cfg(all(unix, feature="network"))]
+            Interface::Ipc(ref mut x) => x.read(buf),
             Interface::Dummy(ref mut _x) => unimplemented!(),
         }
     }
@@ -132,6 +154,8 @@ impl Write for Interface {
             Interface::Stdio(ref mut x) => x.1.write(buf),
             #[cfg(feature="network")]
             Interface::Tls(ref mut x) => x.write(buf),
+            #[cfg(all(unix, feature="network"))]
+            Interface::Ipc(ref mut x) => x.write(buf),
             Interface::Dummy(ref mut x) => x.write(buf),
         }
     }
@@ -142,6 +166,8 @@ impl Write for Interface {
             Interface::Stdio(ref mut x) => x.1.flush(),
             #[cfg(feature="network")]
             Interface::Tls(ref mut x) => x.flush(),
+            #[cfg(all(unix, feature="network"))]
+            Interface::Ipc(ref mut x) => x.flush(),
             Interface::Dummy(ref mut x) => x.flush(),
         }
     }
