@@ -44,7 +44,7 @@ extern crate nix;
 extern crate base64;
 #[macro_use] extern crate cfg_if;
 
-#[cfg(target_os="linux")]
+#[cfg(all(target_os="linux", target_arch="x86_64"))]
 extern crate caps;
 
 #[cfg(feature="network")]

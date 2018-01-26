@@ -2,7 +2,7 @@ use clap::{App, Arg, AppSettings};
 use libc::{self, gid_t};
 use errno::errno;
 
-#[cfg(target_os="linux")]
+#[cfg(all(target_os="linux", target_arch="x86_64"))]
 use caps::{self, Capability, CapSet};
 
 use ::{Result, Shell, Error, Arguments};
@@ -206,7 +206,7 @@ pub fn setgroups(_sh: &mut Shell, args: Arguments) -> Result {
     Ok(())
 }
 
-#[cfg(target_os="linux")]
+#[cfg(all(target_os="linux", target_arch="x86_64"))]
 pub fn caps(sh: &mut Shell, args: Arguments) -> Result {
     let matches = App::new("caps")
         .setting(AppSettings::DisableVersion)
