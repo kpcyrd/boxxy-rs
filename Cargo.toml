@@ -28,6 +28,7 @@ errno = "0.2"
 regex = "0.2"
 nix = "0.9"
 base64 = "0.9"
+error-chain = "0.11"
 cfg-if = "0.1"
 
 # network: revshell

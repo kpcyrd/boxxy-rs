@@ -1,7 +1,7 @@
 use libc::{self, uid_t, gid_t};
 use errno::errno;
 
-use Error;
+use ::{Result, ErrorKind};
 
 
 
@@ -11,7 +11,7 @@ use Error;
 /// let (ruid, euid, suid) = boxxy::ffi::getresuid().unwrap();
 /// println!("ruid={}, euid={}, suid={}", ruid, euid, suid);
 /// ```
-pub fn getresuid() -> Result<(uid_t, uid_t, uid_t), Error> {
+pub fn getresuid() -> Result<(uid_t, uid_t, uid_t)> {
     let mut ruid: uid_t = 0;
     let mut euid: uid_t = 0;
     let mut suid: uid_t = 0;
@@ -20,7 +20,7 @@ pub fn getresuid() -> Result<(uid_t, uid_t, uid_t), Error> {
 
     if ret != 0 {
         let err = errno();
-        Err(Error::Errno(err))
+        Err(ErrorKind::Errno(err).into())
     } else {
         Ok((ruid, euid, suid))
     }
@@ -33,7 +33,7 @@ pub fn getresuid() -> Result<(uid_t, uid_t, uid_t), Error> {
 /// let (rgid, egid, sgid) = boxxy::ffi::getresgid().unwrap();
 /// println!("rgid={}, egid={}, sgid={}", rgid, egid, sgid);
 /// ```
-pub fn getresgid() -> Result<(gid_t, gid_t, gid_t), Error> {
+pub fn getresgid() -> Result<(gid_t, gid_t, gid_t)> {
     let mut rgid: gid_t = 0;
     let mut egid: gid_t = 0;
     let mut sgid: gid_t = 0;
@@ -42,7 +42,7 @@ pub fn getresgid() -> Result<(gid_t, gid_t, gid_t), Error> {
 
     if ret != 0 {
         let err = errno();
-        Err(Error::Errno(err))
+        Err(ErrorKind::Errno(err).into())
     } else {
         Ok((rgid, egid, sgid))
     }
@@ -54,12 +54,12 @@ pub fn getresgid() -> Result<(gid_t, gid_t, gid_t), Error> {
 /// ```no_run
 /// boxxy::ffi::setgroups(vec![1,2,3]).unwrap();
 /// ```
-pub fn setgroups(groups: Vec<gid_t>) -> Result<(), Error> {
+pub fn setgroups(groups: Vec<gid_t>) -> Result<()> {
     let ret = unsafe { libc::setgroups(groups.len(), groups.as_ptr()) };
 
     if ret < 0 {
         let err = errno();
-        Err(Error::Errno(err))
+        Err(ErrorKind::Errno(err).into())
     } else {
         Ok(())
     }

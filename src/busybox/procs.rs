@@ -12,7 +12,7 @@ use std::result;
 use std::process::Command;
 
 
-pub fn echo(sh: &mut Shell, args: Arguments) -> Result {
+pub fn echo(sh: &mut Shell, args: Arguments) -> Result<()> {
     let msg = match args.len() {
         0 | 1 => String::new(),
         _ => {
@@ -32,7 +32,7 @@ pub fn echo(sh: &mut Shell, args: Arguments) -> Result {
 
 
 #[cfg(unix)]
-pub fn jit(sh: &mut Shell, args: Arguments) -> Result {
+pub fn jit(sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("jit")
         .setting(AppSettings::DisableVersion)
         .arg(Arg::with_name("hex")
@@ -83,7 +83,7 @@ pub fn jit(sh: &mut Shell, args: Arguments) -> Result {
 
 
 // TODO: i/o isn't redirected
-pub fn exec(_sh: &mut Shell, mut args: Arguments) -> Result {
+pub fn exec(_sh: &mut Shell, mut args: Arguments) -> Result<()> {
     if args.len() < 2 {
         // triggers an usage errror
         let _ = App::new("exec")

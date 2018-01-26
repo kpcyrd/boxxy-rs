@@ -7,7 +7,7 @@ use regex::Regex;
 #[cfg(target_os="linux")]
 use nix;
 
-use ::{Result, Shell, Error, Arguments};
+use ::{Result, Shell, ErrorKind, Arguments};
 
 use std::fs;
 use std::env;
@@ -21,7 +21,7 @@ use std::time::SystemTime;
 use std::os::unix::fs::MetadataExt;
 
 
-pub fn cat(sh: &mut Shell, args: Arguments) -> Result {
+pub fn cat(sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("cat")
         .setting(AppSettings::DisableVersion)
         .arg(Arg::with_name("path")
@@ -50,7 +50,7 @@ pub fn cat(sh: &mut Shell, args: Arguments) -> Result {
 }
 
 
-pub fn cd(_sh: &mut Shell, args: Arguments) -> Result {
+pub fn cd(_sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("cd")
         .setting(AppSettings::DisableVersion)
         .arg(Arg::with_name("path")
@@ -67,7 +67,7 @@ pub fn cd(_sh: &mut Shell, args: Arguments) -> Result {
 
 
 #[cfg(unix)]
-pub fn chmod(sh: &mut Shell, args: Arguments) -> Result {
+pub fn chmod(sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("chmod")
         .setting(AppSettings::DisableVersion)
         .arg(Arg::with_name("mode").required(true))
@@ -88,7 +88,7 @@ pub fn chmod(sh: &mut Shell, args: Arguments) -> Result {
 
         if ret != 0 {
             let err = errno();
-            shprintln!(sh, "error: {:?}", Error::Errno(err));
+            shprintln!(sh, "error: {:?}", err);
         }
     }
 
@@ -97,7 +97,7 @@ pub fn chmod(sh: &mut Shell, args: Arguments) -> Result {
 
 
 #[cfg(unix)]
-pub fn chown(sh: &mut Shell, args: Arguments) -> Result {
+pub fn chown(sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("chown")
         .setting(AppSettings::DisableVersion)
         .arg(Arg::with_name("uid").required(true))
@@ -119,7 +119,7 @@ pub fn chown(sh: &mut Shell, args: Arguments) -> Result {
 
         if ret != 0 {
             let err = errno();
-            shprintln!(sh, "error: {:?}", Error::Errno(err));
+            shprintln!(sh, "error: {:?}", err);
         }
     }
 
@@ -128,7 +128,7 @@ pub fn chown(sh: &mut Shell, args: Arguments) -> Result {
 
 
 #[cfg(unix)]
-pub fn chroot(_sh: &mut Shell, args: Arguments) -> Result {
+pub fn chroot(_sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("chroot")
         .setting(AppSettings::DisableVersion)
         .arg(Arg::with_name("path")
@@ -143,14 +143,14 @@ pub fn chroot(_sh: &mut Shell, args: Arguments) -> Result {
 
     if ret != 0 {
         let err = errno();
-        Err(Error::Errno(err))
+        Err(ErrorKind::Errno(err).into())
     } else {
         Ok(())
     }
 }
 
 
-pub fn grep(sh: &mut Shell, args: Arguments) -> Result {
+pub fn grep(sh: &mut Shell, args: Arguments) -> Result<()> {
 
     // TODO: -i
     // TODO: -r
@@ -271,7 +271,7 @@ cfg_if! {
 }
 
 
-pub fn ls(sh: &mut Shell, args: Arguments) -> Result {
+pub fn ls(sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("ls")
         .setting(AppSettings::DisableVersion)
         .arg(Arg::with_name("path")
@@ -310,7 +310,7 @@ pub fn ls(sh: &mut Shell, args: Arguments) -> Result {
 }
 
 
-pub fn mkdir(_sh: &mut Shell, args: Arguments) -> Result {
+pub fn mkdir(_sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("mkdir")
         .setting(AppSettings::DisableVersion)
         .arg(Arg::with_name("directory")
@@ -336,7 +336,7 @@ pub fn mkdir(_sh: &mut Shell, args: Arguments) -> Result {
 
 
 #[cfg(target_os="linux")]
-pub fn mount(sh: &mut Shell, args: Arguments) -> Result {
+pub fn mount(sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("mount")
         .setting(AppSettings::DisableVersion)
         .arg(Arg::with_name("src")
@@ -374,7 +374,7 @@ pub fn mount(sh: &mut Shell, args: Arguments) -> Result {
 }
 
 
-pub fn pwd(sh: &mut Shell, _args: Arguments) -> Result {
+pub fn pwd(sh: &mut Shell, _args: Arguments) -> Result<()> {
     let path = env::current_dir().unwrap();
     let path = path.to_str().unwrap().to_owned();
     shprintln!(sh, "{:?}", path);
@@ -382,7 +382,7 @@ pub fn pwd(sh: &mut Shell, _args: Arguments) -> Result {
 }
 
 
-pub fn rm(sh: &mut Shell, args: Arguments) -> Result {
+pub fn rm(sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("rm")
         .setting(AppSettings::DisableVersion)
         .arg(Arg::with_name("path")

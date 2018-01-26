@@ -1,41 +1,41 @@
 use libc::{self, uid_t, gid_t};
 use errno::errno;
 
-use Error;
+use ::{Result, ErrorKind};
 
 
-pub fn getuid() -> Result<uid_t, Error> {
+pub fn getuid() -> Result<uid_t> {
     let uid = unsafe { libc::getuid() };
     Ok(uid)
 }
 
 
-pub fn geteuid() -> Result<uid_t, Error> {
+pub fn geteuid() -> Result<uid_t> {
     let euid = unsafe { libc::geteuid() };
     Ok(euid)
 }
 
 
 
-pub fn setuid(uid: uid_t) -> Result<(), Error> {
+pub fn setuid(uid: uid_t) -> Result<()> {
     let ret = unsafe { libc::setuid(uid) };
 
     if ret != 0 {
         let err = errno();
-        Err(Error::Errno(err))
+        Err(ErrorKind::Errno(err).into())
     } else {
         Ok(())
     }
 }
 
 
-pub fn getgid() -> Result<uid_t, Error> {
+pub fn getgid() -> Result<uid_t> {
     let gid = unsafe { libc::getgid() };
     Ok(gid)
 }
 
 
-pub fn getegid() -> Result<uid_t, Error> {
+pub fn getegid() -> Result<uid_t> {
     let egid = unsafe { libc::getegid() };
     Ok(egid)
 }
@@ -47,7 +47,7 @@ pub fn getegid() -> Result<uid_t, Error> {
 /// let groups = boxxy::ffi::getgroups().unwrap();
 /// println!("groups={:?}", groups);
 /// ```
-pub fn getgroups() -> Result<Vec<gid_t>, Error> {
+pub fn getgroups() -> Result<Vec<gid_t>> {
     let size = 128;
     let mut gids: Vec<gid_t> = Vec::with_capacity(size as usize);
 
@@ -55,7 +55,7 @@ pub fn getgroups() -> Result<Vec<gid_t>, Error> {
 
     if ret < 0 {
         let err = errno();
-        Err(Error::Errno(err))
+        Err(ErrorKind::Errno(err).into())
     } else {
         let groups = (0..ret)
             .map(|i| unsafe { gids.get_unchecked(i as usize) }.to_owned())
