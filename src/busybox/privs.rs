@@ -16,10 +16,10 @@ use std::collections::HashSet;
 cfg_if! {
     if #[cfg(target_os="linux")] {
         pub fn id(sh: &mut Shell, _args: Arguments) -> Result<()> {
-            let (ruid, euid, suid) = ffi::getresuid().unwrap();
-            let (rgid, egid, sgid) = ffi::getresgid().unwrap();
+            let (ruid, euid, suid) = ffi::getresuid()?;
+            let (rgid, egid, sgid) = ffi::getresgid()?;
 
-            let groups = ffi::getgroups().unwrap();
+            let groups = ffi::getgroups()?;
 
             shprintln!(sh,
                 "uid={:?} euid={:?} suid={:?} gid={:?} egid={:?} sgid={:?} groups={:?}",
@@ -36,13 +36,13 @@ cfg_if! {
         }
     } else if #[cfg(unix)] {
         pub fn id(sh: &mut Shell, _args: Arguments) -> Result<()> {
-            let ruid = ffi::getuid().unwrap();
-            let euid = ffi::geteuid().unwrap();
+            let ruid = ffi::getuid()?;
+            let euid = ffi::geteuid()?;
 
-            let rgid = ffi::getgid().unwrap();
-            let egid = ffi::getegid().unwrap();
+            let rgid = ffi::getgid()?;
+            let egid = ffi::getegid()?;
 
-            let groups = ffi::getgroups().unwrap();
+            let groups = ffi::getgroups()?;
 
             shprintln!(sh,
                 "uid={:?} euid={:?} gid={:?} egid={:?} groups={:?}",
@@ -147,8 +147,7 @@ pub fn setgid(_sh: &mut Shell, args: Arguments) -> Result<()> {
         )
         .get_matches_from_safe(args)?;
 
-    let uid = matches.value_of("gid").unwrap();
-    let uid = uid.parse()?;
+    let uid = matches.value_of("gid").unwrap().parse()?;
 
     let ret = unsafe { libc::setgid(uid) };
 
@@ -199,7 +198,7 @@ pub fn setgroups(_sh: &mut Shell, args: Arguments) -> Result<()> {
         .map(|x| x.parse())
         .collect();
 
-    let groups = groups.unwrap();
+    let groups = groups?;
 
     ffi::setgroups(groups)?;
 
@@ -231,7 +230,7 @@ pub fn caps(sh: &mut Shell, args: Arguments) -> Result<()> {
             None => Ok(HashSet::new()),
         };
 
-        capabilities.unwrap()
+        capabilities?
     };
 
     let capset = match matches.occurrences_of("effective") > 0 {
@@ -241,22 +240,22 @@ pub fn caps(sh: &mut Shell, args: Arguments) -> Result<()> {
 
     if clear {
         info!("caps(clear)");
-        caps::clear(None, capset).unwrap();
+        caps::clear(None, capset)?;
     } else if drop {
         for cap in capabilities {
             info!("caps(drop): {:?}", cap);
-            caps::drop(None, capset, cap).unwrap();
+            caps::drop(None, capset, cap)?;
         }
     } else if add {
         for cap in capabilities {
             info!("caps(raise): {:?}", cap);
-            caps::raise(None, capset, cap).unwrap();
+            caps::raise(None, capset, cap)?;
         }
     } else if set {
         info!("caps(set): {:?}", capabilities);
-        caps::set(None, capset, capabilities).unwrap();
+        caps::set(None, capset, capabilities)?;
     } else {
-        let caps = caps::read(None, capset).unwrap();
+        let caps = caps::read(None, capset)?;
         shprintln!(sh, "{:?}", caps);
     }
 

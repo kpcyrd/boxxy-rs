@@ -71,6 +71,12 @@ mod error {
     use regex;
     use errno;
 
+    #[cfg(feature="network")]
+    use hyper;
+
+    #[cfg(all(target_os="linux", target_arch="x86_64"))]
+    use caps;
+
     use std::io;
     use std::num;
 
@@ -86,6 +92,9 @@ mod error {
             Io(io::Error);
             InvalidNum(num::ParseIntError);
             InvalidRegex(regex::Error);
+            Uri(hyper::error::UriError) #[cfg(feature="network")];
+            Http(hyper::Error) #[cfg(feature="network")];
+            Caps(caps::errors::Error) #[cfg(all(target_os="linux", target_arch="x86_64"))];
         }
     }
 }

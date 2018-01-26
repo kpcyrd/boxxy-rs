@@ -50,7 +50,7 @@ pub fn curl(sh: &mut Shell, args: Arguments) -> Result<()> {
     // TODO: show error if != 200
 
     let url = matches.value_of("url").unwrap();
-    let url = url.parse().expect("invalid url");
+    let url = url.parse()?;
 
     if output.is_none() && remote_name {
         output = Some(filename_from_uri(&url));
@@ -96,7 +96,7 @@ pub fn curl(sh: &mut Shell, args: Arguments) -> Result<()> {
             }
 
             (res.body().concat2(), futures::future::ok(next_location))
-        })).unwrap();
+        }))?;
 
         res = Some(inner_res);
         location = inner_location;

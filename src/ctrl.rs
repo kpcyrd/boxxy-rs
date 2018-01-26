@@ -75,8 +75,8 @@ impl Interface {
                 Ok(buf)
             },
             Interface::Stdio(ref mut x) => {
-                x.1.write(prompt.as_bytes()).unwrap();
-                x.1.flush().unwrap();
+                x.1.write(prompt.as_bytes())?;
+                x.1.flush()?;
 
                 let mut buf = String::new();
                 x.0.read_line(&mut buf)?;
@@ -91,8 +91,8 @@ impl Interface {
             },
             #[cfg(feature="network")]
             Interface::Tls(ref mut x) => {
-                x.write(prompt.as_bytes()).unwrap();
-                x.flush().unwrap();
+                x.write(prompt.as_bytes())?;
+                x.flush()?;
 
                 let mut buf = String::new();
                 x.read_line(&mut buf)?;
@@ -107,8 +107,8 @@ impl Interface {
             },
             #[cfg(all(unix, feature="network"))]
             Interface::Ipc(ref mut x) => {
-                x.write(prompt.as_bytes()).unwrap();
-                x.flush().unwrap();
+                x.write(prompt.as_bytes())?;
+                x.flush()?;
 
                 let mut buf = String::new();
                 x.read_line(&mut buf)?;
