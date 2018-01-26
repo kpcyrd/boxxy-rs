@@ -45,6 +45,58 @@ You can use the `objdump` utility to generate shellcode from assembly:
 
     make sc/ohai && cargo run --example objdump sc/ohai
 
+## Debugging systemd security
+
+There is a special ipc binary that automatically swaps its stdio interface with
+an unix domain socket so it can be used to debug security settings of a systemd
+unit.
+
+Prepare `ipc-boxxy`:
+
+    cargo build --release --example ipc-boxxy
+    install -Dm755 target/release/examples/ipc-boxxy /usr/local/bin/ipc-boxxy
+
+Prepare systemd unit:
+
+    sudo tee /etc/systemd/system/ipc-boxxy@.service <<EOF
+    [Unit]
+    Description=ipc boxxy debugger
+
+    [Service]
+    User=root
+    ExecStart=/usr/local/bin/ipc-boxxy /run/boxxy-%i.sock
+
+    NoNewPrivileges=yes
+    ProtectSystem=strict
+    ProtectHome=true
+    PrivateTmp=true
+    PrivateDevices=true
+    ProtectKernelTunables=true
+    ProtectKernelModules=true
+    ProtectControlGroups=true
+    RestrictAddressFamilies=AF_UNIX
+    MemoryDenyWriteExecute=true
+    CapabilityBoundingSet=
+    InaccessiblePaths=-/etc/ssh
+
+    EOF
+
+Attach to shell:
+
+    sudo nc -Ul /run/boxxy-foo.sock &
+    sudo systemctl start ipc-boxxy@foo
+    fg
+
+You can run arbitrary commands with `exec`, but stdio is still attached to the
+original process instead of your socket, to fix this setup a new listener in a
+different terminal:
+
+    sudo nc -Ul /run/boxxy-foo2.sock
+
+And attach /bin/sh to this socket with ncat from your boxxy session:
+
+    exec ncat -c sh\ -i\ 2>&1 -U /run/boxxy-foo2.sock
+
 ## Examples
 
 There are vulnerable sandboxes (`examples/vuln-*`) as a challenge that can be
