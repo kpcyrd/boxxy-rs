@@ -136,6 +136,7 @@ impl Toolbox {
             ("setresgid"    , busybox::setresgid),
             ("setresuid"    , busybox::setresuid),
             ("setreuid"     , busybox::setreuid),
+            ("caps"         , busybox::caps),
         ]);
 
         #[cfg(feature="network")]

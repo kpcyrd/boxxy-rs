@@ -2,10 +2,15 @@ use clap::{App, Arg, AppSettings};
 use libc::{self, gid_t};
 use errno::errno;
 
+#[cfg(target_os="linux")]
+use caps::{self, Capability, CapSet};
+
 use ::{Result, Shell, Error, Arguments};
 use ffi;
 
 use std::result;
+use std::str::FromStr;
+use std::collections::HashSet;
 
 
 cfg_if! {
@@ -197,6 +202,63 @@ pub fn setgroups(_sh: &mut Shell, args: Arguments) -> Result {
     let groups = groups.unwrap();
 
     ffi::setgroups(groups)?;
+
+    Ok(())
+}
+
+#[cfg(target_os="linux")]
+pub fn caps(sh: &mut Shell, args: Arguments) -> Result {
+    let matches = App::new("caps")
+        .setting(AppSettings::DisableVersion)
+        .arg(Arg::with_name("effective").short("e"))
+        .arg(Arg::with_name("clear").short("c"))
+        .arg(Arg::with_name("drop").short("d"))
+        .arg(Arg::with_name("add").short("a"))
+        .arg(Arg::with_name("set").short("s"))
+        .arg(Arg::with_name("capabilities")
+            .multiple(true)
+        )
+        .get_matches_from_safe(args)?;
+
+    let clear = matches.occurrences_of("clear") > 0;
+    let drop = matches.occurrences_of("drop") > 0;
+    let add = matches.occurrences_of("add") > 0;
+    let set = matches.occurrences_of("set") > 0;
+
+    let capabilities = {
+        let capabilities: result::Result<HashSet<_>, _> = match matches.values_of("capabilities") {
+            Some(caps) => caps.map(|c| Capability::from_str(c)).collect(),
+            None => Ok(HashSet::new()),
+        };
+
+        capabilities.unwrap()
+    };
+
+    let capset = match matches.occurrences_of("effective") > 0 {
+        true  => CapSet::Effective,
+        false => CapSet::Permitted,
+    };
+
+    if clear {
+        info!("caps(clear)");
+        caps::clear(None, capset).unwrap();
+    } else if drop {
+        for cap in capabilities {
+            info!("caps(drop): {:?}", cap);
+            caps::drop(None, capset, cap).unwrap();
+        }
+    } else if add {
+        for cap in capabilities {
+            info!("caps(raise): {:?}", cap);
+            caps::raise(None, capset, cap).unwrap();
+        }
+    } else if set {
+        info!("caps(set): {:?}", capabilities);
+        caps::set(None, capset, capabilities).unwrap();
+    } else {
+        let caps = caps::read(None, capset).unwrap();
+        shprintln!(sh, "{:?}", caps);
+    }
 
     Ok(())
 }
