@@ -142,6 +142,8 @@ impl Toolbox {
         toolbox.insert_many_native(vec![
             ("curl"         , busybox::curl),
             ("revshell"     , busybox::revshell),
+            #[cfg(unix)]
+            ("ipcshell"     , busybox::ipcshell),
         ]);
 
         toolbox
