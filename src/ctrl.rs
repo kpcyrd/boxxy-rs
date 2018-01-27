@@ -39,6 +39,7 @@ impl From<io::Error> for PromptError {
 }
 
 
+/// Wraps a Read object and a Write object into a Read/Write object.
 #[derive(Debug)]
 pub struct RW<R: Read, W: Write>(R, W);
 
@@ -62,6 +63,9 @@ impl<R: Read, W: Write> Write for RW<R, W> {
 }
 
 
+/// The interface that the [`Shell`] uses.
+///
+/// [`Shell`]: ../shell/struct.Shell.html
 #[derive(Debug)]
 pub enum Interface {
     Fancy((io::Stdin, io::Stdout, Editor<CmdCompleter>)),
