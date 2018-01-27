@@ -42,16 +42,15 @@ extern crate errno;
 extern crate regex;
 extern crate nix;
 extern crate base64;
+extern crate bufstream;
 #[macro_use] extern crate error_chain;
 #[macro_use] extern crate cfg_if;
 
-#[cfg(all(target_os="linux", target_arch="x86_64"))]
+#[cfg(target_os="linux")]
 extern crate caps;
 
 #[cfg(feature="network")]
 extern crate rustls;
-#[cfg(feature="network")]
-extern crate bufstream;
 #[cfg(feature="network")]
 extern crate webpki;
 #[cfg(feature="network")]
@@ -74,7 +73,7 @@ mod error {
     #[cfg(feature="network")]
     use hyper;
 
-    #[cfg(all(target_os="linux", target_arch="x86_64"))]
+    #[cfg(target_os="linux")]
     use caps;
 
     use std::io;
@@ -94,7 +93,7 @@ mod error {
             InvalidRegex(regex::Error);
             Uri(hyper::error::UriError) #[cfg(feature="network")];
             Http(hyper::Error) #[cfg(feature="network")];
-            Caps(caps::errors::Error) #[cfg(all(target_os="linux", target_arch="x86_64"))];
+            Caps(caps::errors::Error) #[cfg(target_os="linux")];
         }
     }
 }

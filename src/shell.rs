@@ -109,6 +109,7 @@ impl Toolbox {
         toolbox.insert_many_native(vec![
             ("cat"          , busybox::cat),
             ("cd"           , busybox::cd),
+            ("downgrade"    , busybox::downgrade),
             ("echo"         , busybox::echo),
             ("exec"         , busybox::exec),
             ("grep"         , busybox::grep),
@@ -133,15 +134,11 @@ impl Toolbox {
 
         #[cfg(target_os="linux")]
         toolbox.insert_many_native(vec![
+            ("caps"         , busybox::caps),
             ("mount"        , busybox::mount),
             ("setresgid"    , busybox::setresgid),
             ("setresuid"    , busybox::setresuid),
             ("setreuid"     , busybox::setreuid),
-        ]);
-
-        #[cfg(all(target_os="linux", target_arch="x86_64"))]
-        toolbox.insert_many_native(vec![
-            ("caps"         , busybox::caps),
         ]);
 
         #[cfg(feature="network")]
@@ -336,11 +333,30 @@ impl Shell {
         let toolbox = Arc::new(Mutex::new(toolbox));
 
         let ui = Interface::fancy(toolbox.clone());
-        // let ui = Interface::stdio();
 
         Shell {
             ui,
             toolbox,
+        }
+    }
+
+    /// Replace the readline interface with a plain stdin/stdout interface.
+    ///
+    /// ```
+    /// use boxxy::{Shell, Toolbox};
+    ///
+    /// let toolbox = Toolbox::new();
+    /// let mut shell = Shell::new(toolbox);
+    /// shell.downgrade();
+    /// shell.run();
+    /// ```
+    #[inline]
+    pub fn downgrade(&mut self) {
+        match self.ui {
+            Interface::Fancy(_) => {
+                self.ui = Interface::stdio();
+            },
+            _ => shprintln!(self, "[-] interface is already downgraded"),
         }
     }
 
@@ -349,6 +365,17 @@ impl Shell {
         self.ui = ui;
     }
 
+    /// Insert a [`Command`] into the [`Toolbox`].
+    ///
+    /// [`Toolbox`]: struct.Toolbox.html
+    /// [`Command`]: enum.Command.html
+    /// ```
+    /// use boxxy::{self, Shell, Command, Toolbox};
+    ///
+    /// let toolbox = Toolbox::empty();
+    /// let mut shell = Shell::new(toolbox);
+    /// shell.insert("ls", Command::Native(boxxy::busybox::ls));
+    /// ```
     #[inline]
     pub fn insert<I: Into<String>>(&mut self, name: I, command: Command) {
         let mut toolbox = self.toolbox.lock().unwrap();

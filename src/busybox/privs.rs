@@ -2,14 +2,16 @@ use clap::{App, Arg, AppSettings};
 use libc::{self, gid_t};
 use errno::errno;
 
-#[cfg(all(target_os="linux", target_arch="x86_64"))]
+#[cfg(target_os="linux")]
 use caps::{self, Capability, CapSet};
 
 use ::{Result, Shell, ErrorKind, Arguments};
 use ffi;
 
 use std::result;
+#[cfg(target_os="linux")]
 use std::str::FromStr;
+#[cfg(target_os="linux")]
 use std::collections::HashSet;
 
 
@@ -205,7 +207,7 @@ pub fn setgroups(_sh: &mut Shell, args: Arguments) -> Result<()> {
     Ok(())
 }
 
-#[cfg(all(target_os="linux", target_arch="x86_64"))]
+#[cfg(target_os="linux")]
 pub fn caps(sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("caps")
         .setting(AppSettings::DisableVersion)
