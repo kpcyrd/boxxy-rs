@@ -10,7 +10,6 @@ use std::sync::Mutex;
 use bufstream::BufStream;
 use std::io;
 use std::io::prelude::*;
-use std::io::BufReader;
 #[cfg(all(unix, feature="network"))]
 use std::os::unix::net::UnixStream;
 
@@ -41,9 +40,32 @@ impl From<io::Error> for PromptError {
 
 
 #[derive(Debug)]
+pub struct RW<R: Read, W: Write>(R, W);
+
+impl<R: Read, W: Write> Read for RW<R, W> {
+    #[inline]
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        self.0.read(buf)
+    }
+}
+
+impl<R: Read, W: Write> Write for RW<R, W> {
+    #[inline]
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.1.write(buf)
+    }
+
+    #[inline]
+    fn flush(&mut self) -> io::Result<()> {
+        self.1.flush()
+    }
+}
+
+
+#[derive(Debug)]
 pub enum Interface {
     Fancy((io::Stdin, io::Stdout, Editor<CmdCompleter>)),
-    Stdio((BufReader<io::Stdin>, io::Stdout)),
+    Stdio(BufStream<RW<io::Stdin, io::Stdout>>),
     #[cfg(feature="network")]
     Tls(BufStream<OwnedTlsStream>),
     #[cfg(all(unix, feature="network"))]
@@ -61,11 +83,27 @@ impl Interface {
     }
 
     pub fn stdio() -> Interface {
-        Interface::Stdio((BufReader::new(io::stdin()), io::stdout()))
+        Interface::Stdio(BufStream::new(RW(io::stdin(), io::stdout())))
     }
 
     pub fn dummy() -> Interface {
         Interface::Dummy(Vec::new())
+    }
+
+    pub fn readline_raw<RW: BufRead + Write>(prompt: &str, x: &mut RW) -> Result<String, PromptError> {
+        x.write(prompt.as_bytes())?;
+        x.flush()?;
+
+        let mut buf = String::new();
+        x.read_line(&mut buf)?;
+
+        if buf.len() == 0 {
+            return Err(PromptError::Eof)
+        }
+
+        let buf = buf.trim_right().to_owned();
+
+        Ok(buf)
     }
 
     pub fn readline(&mut self, prompt: &str) -> Result<String, PromptError> {
@@ -74,53 +112,11 @@ impl Interface {
                 let buf = x.2.readline(prompt)?;
                 Ok(buf)
             },
-            Interface::Stdio(ref mut x) => {
-                x.1.write(prompt.as_bytes())?;
-                x.1.flush()?;
-
-                let mut buf = String::new();
-                x.0.read_line(&mut buf)?;
-
-                if buf.len() == 0 {
-                    return Err(PromptError::Eof)
-                }
-
-                let buf = buf.trim_right().to_owned(); // TODO
-
-                Ok(buf)
-            },
+            Interface::Stdio(ref mut x) => Self::readline_raw(prompt, x),
             #[cfg(feature="network")]
-            Interface::Tls(ref mut x) => {
-                x.write(prompt.as_bytes())?;
-                x.flush()?;
-
-                let mut buf = String::new();
-                x.read_line(&mut buf)?;
-
-                if buf.len() == 0 {
-                    return Err(PromptError::Eof)
-                }
-
-                let buf = buf.trim_right().to_owned(); // TODO
-
-                Ok(buf)
-            },
+            Interface::Tls(ref mut x) => Self::readline_raw(prompt, x),
             #[cfg(all(unix, feature="network"))]
-            Interface::Ipc(ref mut x) => {
-                x.write(prompt.as_bytes())?;
-                x.flush()?;
-
-                let mut buf = String::new();
-                x.read_line(&mut buf)?;
-
-                if buf.len() == 0 {
-                    return Err(PromptError::Eof)
-                }
-
-                let buf = buf.trim_right().to_owned(); // TODO
-
-                Ok(buf)
-            },
+            Interface::Ipc(ref mut x) => Self::readline_raw(prompt, x),
             Interface::Dummy(ref mut _x) => unimplemented!(),
         }
     }
@@ -137,7 +133,7 @@ impl Read for Interface {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         match *self {
             Interface::Fancy(ref mut x) => x.0.read(buf),
-            Interface::Stdio(ref mut x) => x.0.read(buf),
+            Interface::Stdio(ref mut x) => x.read(buf),
             #[cfg(feature="network")]
             Interface::Tls(ref mut x) => x.read(buf),
             #[cfg(all(unix, feature="network"))]
@@ -151,7 +147,7 @@ impl Write for Interface {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         match *self {
             Interface::Fancy(ref mut x) => x.1.write(buf),
-            Interface::Stdio(ref mut x) => x.1.write(buf),
+            Interface::Stdio(ref mut x) => x.write(buf),
             #[cfg(feature="network")]
             Interface::Tls(ref mut x) => x.write(buf),
             #[cfg(all(unix, feature="network"))]
@@ -163,7 +159,7 @@ impl Write for Interface {
     fn flush(&mut self) -> io::Result<()> {
         match *self {
             Interface::Fancy(ref mut x) => x.1.flush(),
-            Interface::Stdio(ref mut x) => x.1.flush(),
+            Interface::Stdio(ref mut x) => x.flush(),
             #[cfg(feature="network")]
             Interface::Tls(ref mut x) => x.flush(),
             #[cfg(all(unix, feature="network"))]
