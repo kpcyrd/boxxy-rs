@@ -6,7 +6,6 @@ use rustyline::{self, Editor};
 
 use std::sync::Arc;
 use std::sync::Mutex;
-#[cfg(feature="network")]
 use bufstream::BufStream;
 use std::io;
 use std::io::prelude::*;

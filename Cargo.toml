@@ -17,7 +17,7 @@ travis-ci = { repository = "kpcyrd/boxxy-rs" }
 [features]
 default = ["network"]
 network = ["hyper", "hyper-rustls", "tokio-core", "futures",
-           "rustls", "bufstream", "rust-crypto", "webpki"]
+           "rustls", "rust-crypto", "webpki"]
 
 [dependencies]
 rustyline = "1.0.0"
@@ -29,11 +29,11 @@ regex = "0.2"
 nix = "0.9"
 base64 = "0.9"
 error-chain = "0.11"
+bufstream = "0.1"
 cfg-if = "0.1"
 
 # network: revshell
 rustls = { version = "0.11", features = ["dangerous_configuration"], optional = true }
-bufstream = { version = "0.1", optional = true }
 rust-crypto = { version = "0.2", optional = true }
 webpki = { version = "0.17", optional = true }
 

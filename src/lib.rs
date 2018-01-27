@@ -42,6 +42,7 @@ extern crate errno;
 extern crate regex;
 extern crate nix;
 extern crate base64;
+extern crate bufstream;
 #[macro_use] extern crate error_chain;
 #[macro_use] extern crate cfg_if;
 
@@ -50,8 +51,6 @@ extern crate caps;
 
 #[cfg(feature="network")]
 extern crate rustls;
-#[cfg(feature="network")]
-extern crate bufstream;
 #[cfg(feature="network")]
 extern crate webpki;
 #[cfg(feature="network")]
