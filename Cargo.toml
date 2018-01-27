@@ -43,8 +43,8 @@ hyper-rustls = { version = "0.11", optional = true }
 tokio-core = { version = "0.1", optional = true }
 futures = { version = "0.1", optional = true }
 
-[target.'cfg(all(target_os="linux", target_arch="x86_64"))'.dependencies]
-caps = "0.1"
+[target.'cfg(target_os="linux")'.dependencies]
+caps = "0.2"
 
 [dev-dependencies]
 env_logger = "0.5"

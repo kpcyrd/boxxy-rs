@@ -134,15 +134,11 @@ impl Toolbox {
 
         #[cfg(target_os="linux")]
         toolbox.insert_many_native(vec![
+            ("caps"         , busybox::caps),
             ("mount"        , busybox::mount),
             ("setresgid"    , busybox::setresgid),
             ("setresuid"    , busybox::setresuid),
             ("setreuid"     , busybox::setreuid),
-        ]);
-
-        #[cfg(all(target_os="linux", target_arch="x86_64"))]
-        toolbox.insert_many_native(vec![
-            ("caps"         , busybox::caps),
         ]);
 
         #[cfg(feature="network")]
