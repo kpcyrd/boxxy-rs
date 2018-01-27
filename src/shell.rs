@@ -6,6 +6,7 @@ use rustyline;
 use rustyline::completion::Completer;
 
 use Error;
+use ErrorKind;
 use ctrl::{Interface, PromptError};
 pub use ffi::ForeignCommand;
 use std::io;
@@ -136,6 +137,11 @@ impl Toolbox {
             ("setresgid"    , busybox::setresgid),
             ("setresuid"    , busybox::setresuid),
             ("setreuid"     , busybox::setreuid),
+        ]);
+
+        #[cfg(all(target_os="linux", target_arch="x86_64"))]
+        toolbox.insert_many_native(vec![
+            ("caps"         , busybox::caps),
         ]);
 
         #[cfg(feature="network")]
@@ -362,20 +368,17 @@ impl Shell {
 
         let result = match result {
             Some(func) => func.run(self, args),
-            None => Err(Error::Args(clap::Error {
+            None => Err(ErrorKind::Args(clap::Error {
                 message: String::from("\u{1b}[1;31merror:\u{1b}[0m unknown command"),
                 kind: clap::ErrorKind::MissingRequiredArgument,
                 info: None,
-            })),
+            }).into()),
         };
 
         if let Err(err) = result {
-            match err {
-                Error::Args(err)         => shprintln!(self, "{}", err.message),
-                Error::Io(err)           => shprintln!(self, "error: {:?}", err),
-                Error::Errno(err)        => shprintln!(self, "error: {:?}", err),
-                Error::InvalidNum(err)   => shprintln!(self, "error: {:?}", err),
-                Error::InvalidRegex(err) => shprintln!(self, "error: {:?}", err),
+            match *err.kind() {
+                ErrorKind::Args(ref err)    => shprintln!(self, "{}", err.message),
+                _                           => shprintln!(self, "error: {:?}", err),
             }
         }
     }

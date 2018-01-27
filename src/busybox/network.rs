@@ -22,7 +22,7 @@ use std::net::{TcpStream, SocketAddr};
 use std::os::unix::net::UnixStream;
 
 
-pub fn curl(sh: &mut Shell, args: Arguments) -> Result {
+pub fn curl(sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("curl")
         .setting(AppSettings::DisableVersion)
         .arg(Arg::with_name("verbose")
@@ -50,7 +50,7 @@ pub fn curl(sh: &mut Shell, args: Arguments) -> Result {
     // TODO: show error if != 200
 
     let url = matches.value_of("url").unwrap();
-    let url = url.parse().expect("invalid url");
+    let url = url.parse()?;
 
     if output.is_none() && remote_name {
         output = Some(filename_from_uri(&url));
@@ -96,7 +96,7 @@ pub fn curl(sh: &mut Shell, args: Arguments) -> Result {
             }
 
             (res.body().concat2(), futures::future::ok(next_location))
-        })).unwrap();
+        }))?;
 
         res = Some(inner_res);
         location = inner_location;
@@ -137,7 +137,7 @@ pub fn curl(sh: &mut Shell, args: Arguments) -> Result {
 }
 
 
-pub fn revshell(sh: &mut Shell, args: Arguments) -> Result {
+pub fn revshell(sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("revshell")
         .setting(AppSettings::DisableVersion)
         .arg(Arg::with_name("addr").required(true))
@@ -169,7 +169,7 @@ pub fn revshell(sh: &mut Shell, args: Arguments) -> Result {
 
 
 #[cfg(unix)]
-pub fn ipcshell(sh: &mut Shell, args: Arguments) -> Result {
+pub fn ipcshell(sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("ipcshell")
         .setting(AppSettings::DisableVersion)
         .arg(Arg::with_name("path").required(true))

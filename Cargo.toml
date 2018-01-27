@@ -28,6 +28,7 @@ errno = "0.2"
 regex = "0.2"
 nix = "0.9"
 base64 = "0.9"
+error-chain = "0.11"
 cfg-if = "0.1"
 
 # network: revshell
@@ -41,6 +42,9 @@ hyper = { version = "0.11", optional = true }
 hyper-rustls = { version = "0.11", optional = true }
 tokio-core = { version = "0.1", optional = true }
 futures = { version = "0.1", optional = true }
+
+[target.'cfg(all(target_os="linux", target_arch="x86_64"))'.dependencies]
+caps = "0.1"
 
 [dev-dependencies]
 env_logger = "0.5"

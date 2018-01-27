@@ -42,7 +42,11 @@ extern crate errno;
 extern crate regex;
 extern crate nix;
 extern crate base64;
+#[macro_use] extern crate error_chain;
 #[macro_use] extern crate cfg_if;
+
+#[cfg(all(target_os="linux", target_arch="x86_64"))]
+extern crate caps;
 
 #[cfg(feature="network")]
 extern crate rustls;
@@ -62,8 +66,39 @@ extern crate tokio_core;
 #[cfg(feature="network")]
 extern crate futures;
 
-use std::io;
-use std::num;
+mod error {
+    use clap;
+    use regex;
+    use errno;
+
+    #[cfg(feature="network")]
+    use hyper;
+
+    #[cfg(all(target_os="linux", target_arch="x86_64"))]
+    use caps;
+
+    use std::io;
+    use std::num;
+
+    error_chain! {
+        errors {
+            Errno(errno: errno::Errno) {
+                description("errno")
+                display("errno: {:?}", errno)
+            }
+        }
+        foreign_links {
+            Args(clap::Error);
+            Io(io::Error);
+            InvalidNum(num::ParseIntError);
+            InvalidRegex(regex::Error);
+            Uri(hyper::error::UriError) #[cfg(feature="network")];
+            Http(hyper::Error) #[cfg(feature="network")];
+            Caps(caps::errors::Error) #[cfg(all(target_os="linux", target_arch="x86_64"))];
+        }
+    }
+}
+pub use self::error::{Result, Error, ErrorKind};
 
 #[macro_use] mod macros;
 pub mod busybox;
@@ -76,41 +111,5 @@ pub mod shell;
 pub use shell::{Shell, Toolbox};
 pub use shell::{Command, NativeCommand, ForeignCommand};
 
-/// Result of builtin commands
-pub type Result = std::result::Result<(), Error>;
 /// Arguments passed to builtin commands
 pub type Arguments = Vec<String>;
-
-/// Possible errors during builtin commands
-#[derive(Debug)]
-pub enum Error {
-    Args(clap::Error),
-    Io(io::Error),
-    Errno(errno::Errno),
-    InvalidNum(std::num::ParseIntError),
-    InvalidRegex(regex::Error),
-}
-
-impl From<clap::Error> for Error {
-    fn from(err: clap::Error) -> Error {
-        Error::Args(err)
-    }
-}
-
-impl From<io::Error> for Error {
-    fn from(err: io::Error) -> Error {
-        Error::Io(err)
-    }
-}
-
-impl From<num::ParseIntError> for Error {
-    fn from(err: num::ParseIntError) -> Error {
-        Error::InvalidNum(err)
-    }
-}
-
-impl From<regex::Error> for Error {
-    fn from(err: regex::Error) -> Error {
-        Error::InvalidRegex(err)
-    }
-}
