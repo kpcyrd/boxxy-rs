@@ -9,7 +9,9 @@ use ::{Result, Shell, ErrorKind, Arguments};
 use ffi;
 
 use std::result;
+#[cfg(target_os="linux")]
 use std::str::FromStr;
+#[cfg(target_os="linux")]
 use std::collections::HashSet;
 
 
