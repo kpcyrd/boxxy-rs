@@ -15,6 +15,9 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use std::collections::HashMap;
 
+#[cfg(unix)]
+use std::os::unix::io::{RawFd, AsRawFd};
+
 
 #[derive(Clone)]
 pub enum Command {
@@ -363,6 +366,34 @@ impl Shell {
     #[inline]
     pub fn hotswap(&mut self, ui: Interface) {
         self.ui = ui;
+    }
+
+    // this feature is unix only
+    #[cfg(unix)]
+    #[inline]
+    pub fn pipe(&mut self) -> Option<(RawFd, RawFd, RawFd)> {
+        match self.ui {
+            // this connects the real stdio automatically
+            Interface::Fancy(_) => None,
+            Interface::Stdio(ref ui) => {
+                let (r, w) = ui.get_ref().as_raw_fd();
+                Some((r, w, w))
+            },
+            // NOTE: not supported yet
+            Interface::Tls(_) => None,
+            Interface::Ipc(ref ui) => {
+                let fd = ui.get_ref().as_raw_fd();
+                Some((fd, fd, fd))
+            },
+            Interface::Dummy(_) => None,
+        }
+    }
+
+    // if not unix, always return None
+    #[cfg(not(unix))]
+    #[inline]
+    pub fn pipe(&mut self) -> Option<(RawFd, RawFd, RawFd)> {
+        None
     }
 
     /// Insert a [`Command`] into the [`Toolbox`].
