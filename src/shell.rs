@@ -380,20 +380,15 @@ impl Shell {
                 Some((r, w, w))
             },
             // NOTE: not supported yet
+            #[cfg(feature="network")]
             Interface::Tls(_) => None,
+            #[cfg(all(unix, feature="network"))]
             Interface::Ipc(ref ui) => {
                 let fd = ui.get_ref().as_raw_fd();
                 Some((fd, fd, fd))
             },
             Interface::Dummy(_) => None,
         }
-    }
-
-    // if not unix, always return None
-    #[cfg(not(unix))]
-    #[inline]
-    pub fn pipe(&mut self) -> Option<(RawFd, RawFd, RawFd)> {
-        None
     }
 
     /// Insert a [`Command`] into the [`Toolbox`].

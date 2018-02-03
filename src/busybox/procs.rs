@@ -104,24 +104,24 @@ pub fn exec(sh: &mut Shell, mut args: Arguments) -> Result<()> {
 
         let prog = args.remove(0);
 
-        if let Some((stdin, stdout, stderr)) = sh.pipe() {
-            // if stdio needs redirection
-            // this is only supported on unix
-            unsafe {
-                Command::new(prog)
-                    .args(args)
-                    .stdin(Stdio::from_raw_fd(libc::dup(stdin)))
-                    .stdout(Stdio::from_raw_fd(libc::dup(stdout)))
-                    .stderr(Stdio::from_raw_fd(libc::dup(stderr)))
-                    .spawn()?
-                    .wait()?;
+        let mut child = Command::new(prog);
+        child.args(args);
+
+        #[cfg(unix)]
+        {
+            if let Some((stdin, stdout, stderr)) = sh.pipe() {
+                // if stdio needs redirection
+                // this is only supported on unix
+                unsafe {
+                    child.stdin(Stdio::from_raw_fd(libc::dup(stdin)))
+                        .stdout(Stdio::from_raw_fd(libc::dup(stdout)))
+                        .stderr(Stdio::from_raw_fd(libc::dup(stderr)));
+                }
             }
-        } else {
-            Command::new(prog)
-                .args(args)
-                .spawn()?
-                .wait()?;
         }
+
+        child.spawn()?
+            .wait()?;
     }
 
     Ok(())
