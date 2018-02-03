@@ -87,15 +87,9 @@ Attach to shell:
     sudo systemctl start ipc-boxxy@foo
     fg
 
-You can run arbitrary commands with `exec`, but stdio is still attached to the
-original process instead of your socket, to fix this setup a new listener in a
-different terminal:
+You can run arbitrary commands with `exec`:
 
-    sudo nc -Ul /run/boxxy-foo2.sock
-
-And attach /bin/sh to this socket with ncat from your boxxy session:
-
-    exec ncat -c sh\ -i\ 2>&1 -U /run/boxxy-foo2.sock
+    exec bash -i
 
 ## Examples
 
