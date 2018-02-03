@@ -11,6 +11,8 @@ use std::io;
 use std::io::prelude::*;
 #[cfg(all(unix, feature="network"))]
 use std::os::unix::net::UnixStream;
+#[cfg(unix)]
+use std::os::unix::io::{RawFd, AsRawFd};
 
 
 #[derive(Debug)]
@@ -41,6 +43,16 @@ impl From<io::Error> for PromptError {
 /// Wraps a Read object and a Write object into a Read/Write object.
 #[derive(Debug)]
 pub struct RW<R: Read, W: Write>(R, W);
+
+#[cfg(unix)]
+impl<R: Read+AsRawFd, W: Write+AsRawFd> RW<R, W> {
+    #[inline]
+    pub fn as_raw_fd(&self) -> (RawFd, RawFd) {
+        let r = self.0.as_raw_fd();
+        let w = self.1.as_raw_fd();
+        (r, w)
+    }
+}
 
 impl<R: Read, W: Write> Read for RW<R, W> {
     #[inline]

@@ -11,6 +11,11 @@ use std::mem;
 use std::result;
 use std::process::Command;
 
+#[cfg(unix)]
+use std::process::Stdio;
+#[cfg(unix)]
+use std::os::unix::io::FromRawFd;
+
 
 pub fn echo(sh: &mut Shell, args: Arguments) -> Result<()> {
     let msg = match args.len() {
@@ -82,8 +87,7 @@ pub fn jit(sh: &mut Shell, args: Arguments) -> Result<()> {
 }
 
 
-// TODO: i/o isn't redirected
-pub fn exec(_sh: &mut Shell, mut args: Arguments) -> Result<()> {
+pub fn exec(sh: &mut Shell, mut args: Arguments) -> Result<()> {
     if args.len() < 2 {
         // triggers an usage errror
         let _ = App::new("exec")
@@ -100,9 +104,23 @@ pub fn exec(_sh: &mut Shell, mut args: Arguments) -> Result<()> {
 
         let prog = args.remove(0);
 
-        Command::new(prog)
-            .args(args)
-            .spawn()?
+        let mut child = Command::new(prog);
+        child.args(args);
+
+        #[cfg(unix)]
+        {
+            if let Some((stdin, stdout, stderr)) = sh.pipe() {
+                // if stdio needs redirection
+                // this is only supported on unix
+                unsafe {
+                    child.stdin(Stdio::from_raw_fd(libc::dup(stdin)))
+                        .stdout(Stdio::from_raw_fd(libc::dup(stdout)))
+                        .stderr(Stdio::from_raw_fd(libc::dup(stderr)));
+                }
+            }
+        }
+
+        child.spawn()?
             .wait()?;
     }
 
