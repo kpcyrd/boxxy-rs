@@ -2,6 +2,7 @@
 use Error;
 use std::ptr;
 use std::ffi::CString;
+use std::os::raw::c_char;
 
 pub mod exports;
 pub use self::exports::*;
@@ -33,7 +34,7 @@ pub use self::unix::*;
 
 
 #[derive(Debug, Clone)]
-pub struct ForeignCommand(extern fn(usize, *const *const i8) -> i32);
+pub struct ForeignCommand(extern fn(usize, *const *const c_char) -> i32);
 
 impl ForeignCommand {
     #[inline]
