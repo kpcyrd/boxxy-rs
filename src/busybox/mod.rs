@@ -2,6 +2,9 @@
 
 /// Disk related commands
 pub mod disk;
+#[cfg(target_os="linux")]
+/// Kernel related commands
+pub mod kernel;
 #[cfg(unix)]
 /// Privilege related commands
 pub mod privs;
@@ -14,6 +17,8 @@ pub mod meta;
 pub mod network;
 
 pub use self::disk::*;
+#[cfg(target_os="linux")]
+pub use self::kernel::*;
 #[cfg(unix)]
 pub use self::privs::*;
 pub use self::procs::*;

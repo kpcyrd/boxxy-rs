@@ -48,6 +48,8 @@ extern crate bufstream;
 
 #[cfg(target_os="linux")]
 extern crate caps;
+#[cfg(target_os="linux")]
+extern crate kmod;
 
 #[cfg(feature="archives")]
 extern crate tar;
