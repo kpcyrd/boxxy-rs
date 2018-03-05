@@ -49,6 +49,11 @@ extern crate bufstream;
 #[cfg(target_os="linux")]
 extern crate caps;
 
+#[cfg(feature="archives")]
+extern crate tar;
+#[cfg(feature="archives")]
+extern crate libflate;
+
 #[cfg(feature="network")]
 extern crate rustls;
 #[cfg(feature="network")]

@@ -15,9 +15,10 @@ crate-type = ["lib", "dylib", "staticlib"]
 travis-ci = { repository = "kpcyrd/boxxy-rs" }
 
 [features]
-default = ["network"]
+default = ["network", "archives"]
 network = ["hyper", "hyper-rustls", "tokio-core", "futures",
            "rustls", "rust-crypto", "webpki"]
+archives = ["tar", "libflate"]
 
 [dependencies]
 rustyline = "1.0.0"
@@ -31,6 +32,10 @@ base64 = "0.9"
 error-chain = "0.11"
 bufstream = "0.1"
 cfg-if = "0.1"
+
+# disk: tar
+tar = { version = "0.4", optional = true }
+libflate = { version = "0.1.14", optional = true }
 
 # network: revshell
 rustls = { version = "0.12", features = ["dangerous_configuration"], optional = true }

@@ -144,6 +144,11 @@ impl Toolbox {
             ("setreuid"     , busybox::setreuid),
         ]);
 
+        #[cfg(feature="archives")]
+        toolbox.insert_many_native(vec![
+            ("tar"          , busybox::tar),
+        ]);
+
         #[cfg(feature="network")]
         toolbox.insert_many_native(vec![
             ("curl"         , busybox::curl),
