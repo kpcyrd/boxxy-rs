@@ -5,11 +5,13 @@ use libc::{self, mode_t};
 use errno::errno;
 use regex::Regex;
 use tar;
+use libflate::gzip;
 #[cfg(target_os="linux")]
 use nix;
 
 use ::{Result, Shell, ErrorKind, Arguments};
 
+use std::io;
 use std::env;
 use std::path::Path;
 use std::fs::{self, File, DirEntry};
@@ -195,13 +197,88 @@ pub fn grep(sh: &mut Shell, args: Arguments) -> Result<()> {
 }
 
 
+#[derive(Debug)]
+enum ArchiveReader {
+    File(File),
+    Gzip(gzip::Decoder<File>),
+}
+
+impl Read for ArchiveReader {
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        match *self {
+            ArchiveReader::File(ref mut f) => f.read(buf),
+            ArchiveReader::Gzip(ref mut f) => f.read(buf),
+        }
+    }
+}
+
+enum ArchiveWriter {
+    File(File),
+    Gzip(gzip::Encoder<File>),
+}
+
+impl ArchiveWriter {
+    fn finish(self) -> Result<()> {
+        match self {
+            ArchiveWriter::File(_) => (),
+            ArchiveWriter::Gzip(f) => {
+                f.finish().into_result()?;
+            },
+        }
+        Ok(())
+    }
+}
+
+impl Write for ArchiveWriter {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        match *self {
+            ArchiveWriter::File(ref mut f) => f.write(buf),
+            ArchiveWriter::Gzip(ref mut f) => f.write(buf),
+        }
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        match *self {
+            ArchiveWriter::File(ref mut f) => f.flush(),
+            ArchiveWriter::Gzip(ref mut f) => f.flush(),
+        }
+    }
+}
+
+#[derive(Debug)]
+enum Compression {
+    Gzip,
+    None,
+}
+
+impl Compression {
+    #[inline]
+    fn open(&self, path: &str) -> Result<ArchiveReader> {
+        let file = File::open(path)?;
+        match *self {
+            Compression::Gzip => Ok(ArchiveReader::Gzip(gzip::Decoder::new(file)?)),
+            Compression::None => Ok(ArchiveReader::File(file)),
+        }
+    }
+
+    #[inline]
+    fn create(&self, path: &str) -> Result<ArchiveWriter> {
+        let file = File::create(path)?;
+        match *self {
+            Compression::Gzip => Ok(ArchiveWriter::Gzip(gzip::Encoder::new(file)?)),
+            Compression::None => Ok(ArchiveWriter::File(file)),
+        }
+    }
+}
+
+
 pub fn tar(sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("tar")
         .setting(AppSettings::DisableVersion)
         .arg(Arg::with_name("extract").short("x"))
         .arg(Arg::with_name("create").short("c"))
         .arg(Arg::with_name("file").short("f"))
-        // .arg(Arg::with_name("gz").short("z")) // TODO
+        .arg(Arg::with_name("gz").short("z"))
         .arg(Arg::with_name("verbose")
             .short("v")
             .multiple(true)
@@ -217,6 +294,7 @@ pub fn tar(sh: &mut Shell, args: Arguments) -> Result<()> {
     let extract = matches.occurrences_of("extract") > 0;
     let create = matches.occurrences_of("create") > 0;
     let verbose = matches.occurrences_of("verbose");
+    let gz = matches.occurrences_of("gz") > 0;
     let archive = matches.value_of("archive").unwrap();
 
     let paths = match matches.values_of("path") {
@@ -229,6 +307,14 @@ pub fn tar(sh: &mut Shell, args: Arguments) -> Result<()> {
         bail!("extra xor create needed");
     }
 
+    let compression = {
+        if gz {
+            Compression::Gzip
+        } else {
+            Compression::None
+        }
+    };
+
     if extract {
         let dest = match paths.len() {
             0 => ".",
@@ -240,34 +326,39 @@ pub fn tar(sh: &mut Shell, args: Arguments) -> Result<()> {
             shprintln!(sh, "extracting to {:?}", dest);
         }
 
-        let mut ar = tar::Archive::new(File::open(archive)?);
+        let file = compression.open(archive)?;
+        let mut ar = tar::Archive::new(file);
         ar.unpack(dest)?;
-
     } else if create {
         if paths.len() == 0 {
             bail!("paths is required with create");
         }
 
-        let file = File::create(archive)?;
-        let mut tar = tar::Builder::new(file);
+        let mut file = compression.create(archive)?;
+        {
+            let mut tar = tar::Builder::new(&mut file);
 
-        for path in paths {
-            let path = Path::new(path);
+            for path in paths {
+                let path = Path::new(path);
 
-            if path.is_dir() {
-                if verbose > 0 {
-                    shprintln!(sh, "adding directory {:?}", path);
+                if path.is_dir() {
+                    if verbose > 0 {
+                        shprintln!(sh, "adding directory {:?}", path);
+                    }
+
+                    tar.append_dir_all(path, path)?;
+                } else {
+                    if verbose > 0 {
+                        shprintln!(sh, "adding file {:?}", path);
+                    }
+
+                    tar.append_file(path, &mut File::open(path)?)?;
                 }
-
-                tar.append_dir_all(path, path)?;
-            } else {
-                if verbose > 0 {
-                    shprintln!(sh, "adding file {:?}", path);
-                }
-
-                tar.append_file(path, &mut File::open(path)?)?;
             }
+
+            tar.finish()?;
         }
+        file.finish()?;
     }
 
     Ok(())
