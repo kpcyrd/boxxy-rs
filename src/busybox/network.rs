@@ -2,7 +2,8 @@ use clap::{App, Arg, AppSettings};
 
 use hyper;
 use hyper_rustls::HttpsConnector;
-use rustls;
+use rustls::{ClientSession, ClientConfig};
+use webpki::DNSNameRef;
 use bufstream::BufStream;
 
 use tokio_core::reactor;
@@ -144,16 +145,20 @@ pub fn revshell(sh: &mut Shell, args: Arguments) -> Result<()> {
         .arg(Arg::with_name("fingerprint").required(true))
         .get_matches_from_safe(args)?;
 
-    let addr: SocketAddr = matches.value_of("addr").unwrap().parse().unwrap(); // TODO: error handling
+    let addr: SocketAddr = matches.value_of("addr").unwrap().parse()?;
     let fingerprint = matches.value_of("fingerprint").unwrap();
 
-    let mut config = rustls::ClientConfig::new();
+    let mut config = ClientConfig::new();
     config.dangerous().set_certificate_verifier(Arc::new(crypto::danger::PinnedCertificateVerification {}));
 
-    let sess = rustls::ClientSession::new(&Arc::new(config), &fingerprint);
+    let fingerprint = match DNSNameRef::try_from_ascii_str(fingerprint) {
+        Ok(fingerprint) => fingerprint,
+        Err(_) => bail!("fingerprint couldn't be converted to DNSNameRef"),
+    };
+    let sess = ClientSession::new(&Arc::new(config), fingerprint);
 
     shprintln!(sh, "[*] connecting to {}...", addr);
-    let sock = TcpStream::connect(&addr).unwrap(); // TODO: error handling
+    let sock = TcpStream::connect(&addr)?;
     shprintln!(sh, "[+] connected!");
 
     let sock = OwnedTlsStream::new(sess, sock);
@@ -178,7 +183,7 @@ pub fn ipcshell(sh: &mut Shell, args: Arguments) -> Result<()> {
     let path = matches.value_of("path").unwrap();
 
     shprintln!(sh, "[*] connecting to {}...", path);
-    let sock = UnixStream::connect(&path).unwrap(); // TODO: error handling
+    let sock = UnixStream::connect(&path)?;
     shprintln!(sh, "[+] connected!");
     let sock = BufStream::new(sock);
 

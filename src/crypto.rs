@@ -51,11 +51,11 @@ pub mod danger {
         fn verify_server_cert(&self,
                               _roots: &rustls::RootCertStore,
                               presented_certs: &[rustls::Certificate],
-                              dns_name: &str,
+                              dns_name: webpki::DNSNameRef,
                               _ocsp: &[u8]) -> Result<rustls::ServerCertVerified, rustls::TLSError> {
 
             for cert in presented_certs {
-                if verify_fingerprint(dns_name, &cert).is_ok() {
+                if verify_fingerprint(dns_name.into(), &cert).is_ok() {
                     return Ok(rustls::ServerCertVerified::assertion());
                 }
             }
