@@ -66,6 +66,7 @@ extern crate tokio_core;
 extern crate futures;
 
 mod error {
+    use std;
     use clap;
     use regex;
     use errno;
@@ -76,9 +77,6 @@ mod error {
     #[cfg(target_os="linux")]
     use caps;
 
-    use std::io;
-    use std::num;
-
     error_chain! {
         errors {
             Errno(errno: errno::Errno) {
@@ -88,9 +86,10 @@ mod error {
         }
         foreign_links {
             Args(clap::Error);
-            Io(io::Error);
-            InvalidNum(num::ParseIntError);
+            Io(std::io::Error);
+            InvalidNum(std::num::ParseIntError);
             InvalidRegex(regex::Error);
+            AddrParseError(std::net::AddrParseError);
             Uri(hyper::error::UriError) #[cfg(feature="network")];
             Http(hyper::Error) #[cfg(feature="network")];
             Caps(caps::errors::Error) #[cfg(target_os="linux")];
