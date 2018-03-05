@@ -4,16 +4,17 @@ use libc::{self, mode_t};
 #[cfg(unix)]
 use errno::errno;
 use regex::Regex;
+use tar;
 #[cfg(target_os="linux")]
 use nix;
 
 use ::{Result, Shell, ErrorKind, Arguments};
 
-use std::fs;
 use std::env;
+use std::path::Path;
+use std::fs::{self, File, DirEntry};
 #[cfg(unix)]
 use std::ffi::CString;
-use std::fs::DirEntry;
 use std::io::BufReader;
 use std::io::prelude::*;
 use std::time::SystemTime;
@@ -33,7 +34,7 @@ pub fn cat(sh: &mut Shell, args: Arguments) -> Result<()> {
     for path in matches.values_of("path").unwrap() {
         debug!("cat: {:?}", path);
 
-        match fs::File::open(path) {
+        match File::open(path) {
             Ok(file) => {
                 let reader = BufReader::new(file);
                 for line in reader.lines() {
@@ -173,7 +174,7 @@ pub fn grep(sh: &mut Shell, args: Arguments) -> Result<()> {
     for path in matches.values_of("path").unwrap() {
         debug!("grep: {:?}", path);
 
-        match fs::File::open(path) {
+        match File::open(path) {
             Ok(file) => {
                 let reader = BufReader::new(file);
                 for line in reader.lines() {
@@ -188,6 +189,85 @@ pub fn grep(sh: &mut Shell, args: Arguments) -> Result<()> {
                 shprintln!(sh, "error: {:?}", err);
             },
         };
+    }
+
+    Ok(())
+}
+
+
+pub fn tar(sh: &mut Shell, args: Arguments) -> Result<()> {
+    let matches = App::new("tar")
+        .setting(AppSettings::DisableVersion)
+        .arg(Arg::with_name("extract").short("x"))
+        .arg(Arg::with_name("create").short("c"))
+        .arg(Arg::with_name("file").short("f"))
+        // .arg(Arg::with_name("gz").short("z")) // TODO
+        .arg(Arg::with_name("verbose")
+            .short("v")
+            .multiple(true)
+        )
+        .arg(Arg::with_name("archive")
+            .required(true)
+        )
+        .arg(Arg::with_name("path")
+            .multiple(true)
+        )
+        .get_matches_from_safe(args)?;
+
+    let extract = matches.occurrences_of("extract") > 0;
+    let create = matches.occurrences_of("create") > 0;
+    let verbose = matches.occurrences_of("verbose");
+    let archive = matches.value_of("archive").unwrap();
+
+    let paths = match matches.values_of("path") {
+        Some(paths) => paths.into_iter().map(|x| x).collect(),
+        None => vec![],
+    };
+
+    // TODO: -t
+    if (extract && create) || !(extract || create) {
+        bail!("extra xor create needed");
+    }
+
+    if extract {
+        let dest = match paths.len() {
+            0 => ".",
+            1 => paths[0],
+            _ => bail!("too many paths"),
+        };
+
+        if verbose > 0 {
+            shprintln!(sh, "extracting to {:?}", dest);
+        }
+
+        let mut ar = tar::Archive::new(File::open(archive)?);
+        ar.unpack(dest)?;
+
+    } else if create {
+        if paths.len() == 0 {
+            bail!("paths is required with create");
+        }
+
+        let file = File::create(archive)?;
+        let mut tar = tar::Builder::new(file);
+
+        for path in paths {
+            let path = Path::new(path);
+
+            if path.is_dir() {
+                if verbose > 0 {
+                    shprintln!(sh, "adding directory {:?}", path);
+                }
+
+                tar.append_dir_all(path, path)?;
+            } else {
+                if verbose > 0 {
+                    shprintln!(sh, "adding file {:?}", path);
+                }
+
+                tar.append_file(path, &mut File::open(path)?)?;
+            }
+        }
     }
 
     Ok(())

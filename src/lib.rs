@@ -42,6 +42,7 @@ extern crate errno;
 extern crate regex;
 extern crate nix;
 extern crate base64;
+extern crate tar;
 extern crate bufstream;
 #[macro_use] extern crate error_chain;
 #[macro_use] extern crate cfg_if;

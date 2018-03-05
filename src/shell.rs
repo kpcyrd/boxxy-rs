@@ -120,6 +120,7 @@ impl Toolbox {
             ("mkdir"        , busybox::mkdir),
             ("pwd"          , busybox::pwd),
             ("rm"           , busybox::rm),
+            ("tar"          , busybox::tar),
         ]);
 
         #[cfg(unix)]

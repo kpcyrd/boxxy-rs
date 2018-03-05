@@ -31,6 +31,7 @@ base64 = "0.9"
 error-chain = "0.11"
 bufstream = "0.1"
 cfg-if = "0.1"
+tar = "0.4"
 
 # network: revshell
 rustls = { version = "0.12", features = ["dangerous_configuration"], optional = true }
