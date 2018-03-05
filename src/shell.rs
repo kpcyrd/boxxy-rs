@@ -120,7 +120,6 @@ impl Toolbox {
             ("mkdir"        , busybox::mkdir),
             ("pwd"          , busybox::pwd),
             ("rm"           , busybox::rm),
-            ("tar"          , busybox::tar),
         ]);
 
         #[cfg(unix)]
@@ -143,6 +142,11 @@ impl Toolbox {
             ("setresgid"    , busybox::setresgid),
             ("setresuid"    , busybox::setresuid),
             ("setreuid"     , busybox::setreuid),
+        ]);
+
+        #[cfg(feature="archives")]
+        toolbox.insert_many_native(vec![
+            ("tar"          , busybox::tar),
         ]);
 
         #[cfg(feature="network")]

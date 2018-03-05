@@ -4,15 +4,19 @@ use libc::{self, mode_t};
 #[cfg(unix)]
 use errno::errno;
 use regex::Regex;
+#[cfg(feature="archives")]
 use tar;
+#[cfg(feature="archives")]
 use libflate::gzip;
 #[cfg(target_os="linux")]
 use nix;
 
 use ::{Result, Shell, ErrorKind, Arguments};
 
+#[cfg(feature="archives")]
 use std::io;
 use std::env;
+#[cfg(feature="archives")]
 use std::path::Path;
 use std::fs::{self, File, DirEntry};
 #[cfg(unix)]
@@ -197,12 +201,14 @@ pub fn grep(sh: &mut Shell, args: Arguments) -> Result<()> {
 }
 
 
+#[cfg(feature="archives")]
 #[derive(Debug)]
 enum ArchiveReader {
     File(File),
     Gzip(gzip::Decoder<File>),
 }
 
+#[cfg(feature="archives")]
 impl Read for ArchiveReader {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         match *self {
@@ -212,11 +218,13 @@ impl Read for ArchiveReader {
     }
 }
 
+#[cfg(feature="archives")]
 enum ArchiveWriter {
     File(File),
     Gzip(gzip::Encoder<File>),
 }
 
+#[cfg(feature="archives")]
 impl ArchiveWriter {
     fn finish(self) -> Result<()> {
         match self {
@@ -229,6 +237,7 @@ impl ArchiveWriter {
     }
 }
 
+#[cfg(feature="archives")]
 impl Write for ArchiveWriter {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         match *self {
@@ -245,12 +254,14 @@ impl Write for ArchiveWriter {
     }
 }
 
+#[cfg(feature="archives")]
 #[derive(Debug)]
 enum Compression {
     Gzip,
     None,
 }
 
+#[cfg(feature="archives")]
 impl Compression {
     #[inline]
     fn open(&self, path: &str) -> Result<ArchiveReader> {
@@ -272,6 +283,7 @@ impl Compression {
 }
 
 
+#[cfg(feature="archives")]
 pub fn tar(sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("tar")
         .setting(AppSettings::DisableVersion)
