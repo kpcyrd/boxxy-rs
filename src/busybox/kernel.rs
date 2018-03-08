@@ -8,9 +8,9 @@ pub fn lsmod(sh: &mut Shell, args: Arguments) -> Result<()> {
         .setting(AppSettings::DisableVersion)
         .get_matches_from_safe(args)?;
 
-    let ctx = kmod::Context::new();
+    let ctx = kmod::Context::new()?;
 
-    for module in ctx.modules_loaded() {
+    for module in ctx.modules_loaded()? {
         let name = module.name();
         let refcount = module.refcount();
         let size = module.size();

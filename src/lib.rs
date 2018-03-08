@@ -83,6 +83,8 @@ mod error {
 
     #[cfg(target_os="linux")]
     use caps;
+    #[cfg(target_os="linux")]
+    use kmod;
 
     error_chain! {
         errors {
@@ -100,6 +102,7 @@ mod error {
             Uri(hyper::error::UriError) #[cfg(feature="network")];
             Http(hyper::Error) #[cfg(feature="network")];
             Caps(caps::errors::Error) #[cfg(target_os="linux")];
+            Kmod(kmod::Error) #[cfg(target_os="linux")];
         }
     }
 }
