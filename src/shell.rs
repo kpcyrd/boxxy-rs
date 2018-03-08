@@ -138,8 +138,10 @@ impl Toolbox {
         #[cfg(target_os="linux")]
         toolbox.insert_many_native(vec![
             ("caps"         , busybox::caps),
+            ("insmod"       , busybox::insmod),
             ("lsmod"        , busybox::lsmod),
             ("mount"        , busybox::mount),
+            ("rmmod"        , busybox::rmmod),
             ("setresgid"    , busybox::setresgid),
             ("setresuid"    , busybox::setresuid),
             ("setreuid"     , busybox::setreuid),
