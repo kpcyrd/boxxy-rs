@@ -1,4 +1,4 @@
-use clap::{App, Arg, AppSettings};
+use clap::{App, Arg, ArgGroup, AppSettings};
 #[cfg(unix)]
 use libc::{self, mode_t};
 #[cfg(unix)]
@@ -287,13 +287,31 @@ impl Compression {
 pub fn tar(sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("tar")
         .setting(AppSettings::DisableVersion)
-        .arg(Arg::with_name("extract").short("x"))
-        .arg(Arg::with_name("create").short("c"))
-        .arg(Arg::with_name("file").short("f"))
-        .arg(Arg::with_name("gz").short("z"))
+        .arg(Arg::with_name("extract")
+            .short("x")
+            .help("extract an archive")
+        )
+        .arg(Arg::with_name("create")
+            .short("c")
+            .help("create an archive")
+        )
+        .group(ArgGroup::with_name("action")
+            // TODO: -t
+            .args(&["extract", "create"])
+            .required(true)
+        )
+        .arg(Arg::with_name("file")
+            .short("f")
+            .help("ignored for compatibility")
+        )
+        .arg(Arg::with_name("gz")
+            .short("z")
+            .help("use gz compression")
+        )
         .arg(Arg::with_name("verbose")
             .short("v")
             .multiple(true)
+            .help("verbose output")
         )
         .arg(Arg::with_name("archive")
             .required(true)
@@ -313,11 +331,6 @@ pub fn tar(sh: &mut Shell, args: Arguments) -> Result<()> {
         Some(paths) => paths.into_iter().map(|x| x).collect(),
         None => vec![],
     };
-
-    // TODO: -t
-    if (extract && create) || !(extract || create) {
-        bail!("extra xor create needed");
-    }
 
     let compression = {
         if gz {
