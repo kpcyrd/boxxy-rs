@@ -50,6 +50,14 @@ You can use the `objdump` utility to generate shellcode from assembly:
 See [autoboxxy](autoboxxy/) for tooling to load boxxy from php, even if
 `shell_exec` and friends are disabled by php.ini.
 
+## Static binary
+
+You may need to build a fully static binary, this is possible using the
+`x86_64-unknown-linux-musl` target.
+
+    cargo build --release --example boxxy --target x86_64-unknown-linux-musl
+    strip target/x86_64-unknown-linux-musl/release/examples/boxxy
+
 ## Debugging systemd security
 
 There is a special ipc binary that automatically swaps its stdio interface with
@@ -95,6 +103,18 @@ Attach to shell:
 You can run arbitrary commands with `exec`:
 
     exec bash -i
+
+## AWS lambda
+
+The example folder contains a reimplementation of lambdash, it automatically
+deploys boxxy as an aws lambda and allows you to execute commands on it. The
+client supports cross account access, but needs a preconfigured role that the
+lambda should use. You need to build a [static binary](#static-binary) first.
+
+    cargo run --features=aws --example lambdash -- \
+        --assume-role arn:aws:iam::133713371337:role/AdminRole \
+        --role arn:aws:iam::133337133337:role/lambda-test-role
+        eu-west-1 boxxy
 
 ## Examples
 
