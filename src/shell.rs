@@ -69,7 +69,7 @@ impl CmdCompleter {
 impl Completer for CmdCompleter {
     #[inline]
     fn complete(&self, line: &str, pos: usize) -> rustyline::Result<(usize, Vec<String>)> {
-        if line.contains(" ") || line.len() != pos {
+        if line.contains(' ') || line.len() != pos {
             return Ok((0, vec![]));
         }
 
@@ -413,7 +413,7 @@ impl Shell {
         toolbox.insert(name, command);
     }
 
-    fn process(&mut self, prog: String, args: Vec<String>) {
+    fn process(&mut self, prog: &str, args: Vec<String>) {
         debug!("prog: {:?}, args: {:?}", prog, args);
 
         let result: Option<Command> = {
@@ -462,7 +462,7 @@ impl Shell {
     #[inline]
     pub fn exec_once(&mut self, line: &str) {
         if let Some((prog, args)) = parse_line(line) {
-            self.process(prog, args);
+            self.process(&prog, args);
         }
     }
 
@@ -481,7 +481,7 @@ impl Shell {
         loop {
             match self.get_line() {
                 Ok(Some((prog, args))) => {
-                    self.process(prog, args);
+                    self.process(&prog, args);
                 },
                 Ok(None) => (),
                 Err(_) => break,
