@@ -47,5 +47,5 @@ fn main() {
 
 #[cfg(not(unix))]
 fn main() {
-    panic!("unsupported plattform");
+    panic!("unsupported platform");
 }

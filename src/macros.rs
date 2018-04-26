@@ -2,12 +2,12 @@
 macro_rules! shprintln {
     ($dst:expr, $fmt:expr) => ({
         use std::io::Write;
-        write!($dst, concat!($fmt, "\n")).unwrap();
+        writeln!($dst, $fmt).unwrap();
         $dst.flush().unwrap();
     });
     ($dst:expr, $fmt:expr, $($arg:tt)*) => ({
         use std::io::Write;
-        write!($dst, concat!($fmt, "\n"), $($arg)*).unwrap();
+        writeln!($dst, $fmt, $($arg)*).unwrap();
         $dst.flush().unwrap();
     });
 }

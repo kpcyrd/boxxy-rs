@@ -202,7 +202,7 @@ pub fn setgroups(_sh: &mut Shell, args: Arguments) -> Result<()> {
 
     let groups = groups?;
 
-    ffi::setgroups(groups)?;
+    ffi::setgroups(&groups)?;
 
     Ok(())
 }

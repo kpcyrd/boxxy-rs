@@ -310,13 +310,14 @@ pub fn tar(sh: &mut Shell, args: Arguments) -> Result<()> {
     let archive = matches.value_of("archive").unwrap();
 
     let paths = match matches.values_of("path") {
-        Some(paths) => paths.into_iter().map(|x| x).collect(),
+        Some(paths) => paths.into_iter().collect(),
         None => vec![],
     };
 
     // TODO: -t
-    if (extract && create) || !(extract || create) {
-        bail!("extra xor create needed");
+    // if (extract && create) || !(extract || create) {
+    if !(extract ^ create) {
+        bail!("extract xor create needed");
     }
 
     let compression = {
@@ -438,7 +439,7 @@ cfg_if! {
             let meta = entry.metadata().unwrap();
             format!("{} {:5} {:5}  {:14} {:?}",
                 perms_to_str(meta.is_dir(), meta.mode()), meta.uid(), meta.gid(),
-                meta.modified().map(|x| since(x)).unwrap_or(String::from("-")),
+                meta.modified().ok().map_or_else(|| String::from("-"), since),
                 entry.path())
         }
     } else {
@@ -447,7 +448,7 @@ cfg_if! {
             let meta = entry.metadata().unwrap();
             format!("{} {:5} {:5}  {:14} {:?}",
                 perms_to_str(meta.is_dir(), 0), 0, 0,
-                meta.modified().map(|x| since(x)).unwrap_or(String::from("-")),
+                meta.modified().ok().map_or_else(|| String::from("-"), since),
                 entry.path())
         }
     }
@@ -467,7 +468,7 @@ pub fn ls(sh: &mut Shell, args: Arguments) -> Result<()> {
     let long = matches.occurrences_of("long") > 0;
 
     let paths = match matches.values_of("path") {
-        Some(paths) => paths.into_iter().map(|x| x).collect(),
+        Some(paths) => paths.into_iter().collect(),
         None => vec!["."],
     };
 

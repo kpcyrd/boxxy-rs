@@ -79,7 +79,7 @@ pub fn curl(sh: &mut Shell, args: Arguments) -> Result<()> {
                     shprintln!(sh, "  {:?}; {:?}", header.name(), header.raw());
                 }
 
-                if !output.is_some() {
+                if output.is_none() {
                     shprintln!(sh, "");
                 }
             }
@@ -198,9 +198,8 @@ pub fn ipcshell(sh: &mut Shell, args: Arguments) -> Result<()> {
 fn filename_from_uri(uri: &hyper::Uri) -> String {
     let path = uri.path();
 
-    if let Some(idx) = path.rfind("/") {
-        let (_, path) = path.split_at(idx);
-        let filename = &path[1..];
+    if let Some(idx) = path.rfind('/') {
+        let filename = &path[idx + 1..];
 
         if filename == "" {
             String::from("index.html")
