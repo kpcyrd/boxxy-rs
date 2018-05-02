@@ -14,6 +14,10 @@ crate-type = ["lib", "dylib", "staticlib"]
 [badges]
 travis-ci = { repository = "kpcyrd/boxxy-rs" }
 
+# https://github.com/rust-lang/cargo/issues/5463
+#[workspace]
+#members = ["autoboxxy"]
+
 [features]
 default = ["network", "archives"]
 network = ["hyper", "hyper-rustls", "tokio-core", "futures",
