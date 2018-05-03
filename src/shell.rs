@@ -384,6 +384,10 @@ impl Shell {
                 let (r, w) = ui.get_ref().as_raw_fd();
                 Some((r, w, w))
             },
+            Interface::File(ref ui) => {
+                let (r, w) = ui.get_ref().as_raw_fd();
+                Some((r, w, w))
+            },
             // NOTE: not supported yet
             #[cfg(feature="network")]
             Interface::Tls(_) => None,

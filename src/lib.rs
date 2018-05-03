@@ -111,6 +111,7 @@ pub mod ctrl;
 pub mod ffi;
 pub mod shell;
 
+pub use ctrl::Interface;
 pub use shell::{Shell, Toolbox};
 pub use shell::{Command, NativeCommand, ForeignCommand};
 
