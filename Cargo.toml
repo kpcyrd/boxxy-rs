@@ -9,14 +9,13 @@ categories = ["command-line-interface", "development-tools::debugging"]
 readme = "README.md"
 
 [lib]
-crate-type = ["lib", "dylib", "staticlib"]
+crate-type = ["lib", "cdylib", "staticlib"]
 
 [badges]
 travis-ci = { repository = "kpcyrd/boxxy-rs" }
 
-# https://github.com/rust-lang/cargo/issues/5463
-#[workspace]
-#members = ["autoboxxy"]
+[workspace]
+members = ["autoboxxy"]
 
 [features]
 default = ["network", "archives"]

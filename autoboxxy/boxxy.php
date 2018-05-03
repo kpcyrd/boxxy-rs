@@ -6,7 +6,7 @@ function boxxy_exec($cmd) {
     $tmp = tempnam('/tmp', 'boxxy');
     // TODO: there should be a way to pipe to a file without this trick
     putenv("AUTOBOXXY=exec sh -c $cmd\\ >\\ $tmp");
-    putenv('LD_PRELOAD=./target/debug/libautoboxxy.so');
+    putenv('LD_PRELOAD=./../target/debug/libautoboxxy.so');
     mail('a', 'a', 'a', 'a');
     putenv('LD_PRELOAD');
     putenv('AUTOBOXXY');

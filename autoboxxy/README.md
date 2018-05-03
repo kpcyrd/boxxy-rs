@@ -4,7 +4,7 @@ Exports a static constructor that is executed by the dynamic loader as soon as
 the library is loaded. It then executes `$AUTOBOXXY` from the environment as a
 boxxy command and terminates the process.
 
-    cargo build && AUTOBOXXY="exec id" LD_PRELOAD=`pwd`/target/debug/libautoboxxy.so date
+    cargo build && AUTOBOXXY="exec id" LD_PRELOAD=`pwd`/../target/debug/libautoboxxy.so date
 
 ## Usage with php
 
@@ -16,8 +16,3 @@ hood to take over the sendmail invocation to execute arbitrary code. See
 This technique has been borrowed from [Chankro].
 
 [Chankro]: https://github.com/TarlogicSecurity/Chankro
-
-## Notes
-
-This project currently does not share a workspace with boxxy due to
-https://github.com/rust-lang/cargo/issues/5463

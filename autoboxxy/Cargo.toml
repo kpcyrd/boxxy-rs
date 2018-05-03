@@ -9,7 +9,7 @@ categories = ["development-tools::debugging"]
 readme = "README.md"
 
 [lib]
-crate-type = ["lib", "dylib", "staticlib"]
+crate-type = ["lib", "cdylib", "staticlib"]
 
 [dependencies]
 
