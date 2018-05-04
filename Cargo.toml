@@ -15,7 +15,7 @@ crate-type = ["lib", "cdylib", "staticlib"]
 travis-ci = { repository = "kpcyrd/boxxy-rs" }
 
 [workspace]
-members = ["autoboxxy"]
+members = ["autoboxxy", "lambdash"]
 
 [features]
 default = ["network", "archives"]
@@ -57,13 +57,3 @@ caps = "0.2"
 [dev-dependencies]
 env_logger = "0.5"
 elf = "0.0.10"
-
-# aws
-rusoto_core = "0.32.0"
-rusoto_sts = "0.32.0"
-rusoto_lambda = "0.32.0"
-structopt = "0.2.7"
-zip = "0.3.1"
-serde = "1.0"
-serde_json = "1.0"
-serde_derive = "1.0"

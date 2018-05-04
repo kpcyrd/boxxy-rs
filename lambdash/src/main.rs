@@ -206,10 +206,10 @@ fn build_zip() -> Result<Vec<u8>> {
         let options = FileOptions::default()
                         .compression_method(zip::CompressionMethod::Stored);
         writer.start_file("client.py", options)?;
-        writer.write_all(include_bytes!("../contrib/aws-wrapper.py"))?;
+        writer.write_all(include_bytes!("../../contrib/aws-wrapper.py"))?;
 
         let mut buf2 = Vec::new();
-        let mut file = File::open("target/x86_64-unknown-linux-musl/release/examples/boxxy")?;
+        let mut file = File::open("../target/x86_64-unknown-linux-musl/release/examples/boxxy")?;
         file.read_to_end(&mut buf2)?;
 
         let options = FileOptions::default()
