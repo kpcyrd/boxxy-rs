@@ -45,6 +45,11 @@ You can use the `objdump` utility to generate shellcode from assembly:
 
     make sc/ohai && cargo run --example objdump sc/ohai
 
+## Invoking from php
+
+See [autoboxxy](autoboxxy/) for tooling to load boxxy from php, even if
+`shell_exec` and friends are disabled by php.ini.
+
 ## Debugging systemd security
 
 There is a special ipc binary that automatically swaps its stdio interface with

@@ -4,8 +4,8 @@ use shell::CmdCompleter;
 use crypto::OwnedTlsStream;
 use rustyline::{self, Editor};
 
-use std::sync::Arc;
-use std::sync::Mutex;
+use std::fs::File;
+use std::sync::{Arc, Mutex};
 use bufstream::BufStream;
 use std::io;
 use std::io::prelude::*;
@@ -81,6 +81,7 @@ impl<R: Read, W: Write> Write for RW<R, W> {
 pub enum Interface {
     Fancy((io::Stdin, io::Stdout, Editor<CmdCompleter>)),
     Stdio(BufStream<RW<io::Stdin, io::Stdout>>),
+    File(BufStream<RW<File, File>>),
     #[cfg(feature="network")]
     Tls(BufStream<OwnedTlsStream>),
     #[cfg(all(unix, feature="network"))]
@@ -99,6 +100,14 @@ impl Interface {
 
     pub fn stdio() -> Interface {
         Interface::Stdio(BufStream::new(RW(io::stdin(), io::stdout())))
+    }
+
+    // TODO: this can fail
+    pub fn file(input: Option<File>, output: Option<File>) -> Interface {
+        let input = input.unwrap_or_else(|| File::open("/dev/null").unwrap());
+        let output = output.unwrap_or_else(|| File::open("/dev/null").unwrap());
+
+        Interface::File(BufStream::new(RW(input, output)))
     }
 
     pub fn dummy() -> Interface {
@@ -128,6 +137,7 @@ impl Interface {
                 Ok(buf)
             },
             Interface::Stdio(ref mut x) => Self::readline_raw(prompt, x),
+            Interface::File(ref mut x) => Self::readline_raw(prompt, x),
             #[cfg(feature="network")]
             Interface::Tls(ref mut x) => Self::readline_raw(prompt, x),
             #[cfg(all(unix, feature="network"))]
@@ -149,6 +159,7 @@ impl Read for Interface {
         match *self {
             Interface::Fancy(ref mut x) => x.0.read(buf),
             Interface::Stdio(ref mut x) => x.read(buf),
+            Interface::File(ref mut x) => x.read(buf),
             #[cfg(feature="network")]
             Interface::Tls(ref mut x) => x.read(buf),
             #[cfg(all(unix, feature="network"))]
@@ -163,6 +174,7 @@ impl Write for Interface {
         match *self {
             Interface::Fancy(ref mut x) => x.1.write(buf),
             Interface::Stdio(ref mut x) => x.write(buf),
+            Interface::File(ref mut x) => x.write(buf),
             #[cfg(feature="network")]
             Interface::Tls(ref mut x) => x.write(buf),
             #[cfg(all(unix, feature="network"))]
@@ -175,6 +187,7 @@ impl Write for Interface {
         match *self {
             Interface::Fancy(ref mut x) => x.1.flush(),
             Interface::Stdio(ref mut x) => x.flush(),
+            Interface::File(ref mut x) => x.flush(),
             #[cfg(feature="network")]
             Interface::Tls(ref mut x) => x.flush(),
             #[cfg(all(unix, feature="network"))]
