@@ -15,7 +15,7 @@ crate-type = ["lib", "cdylib", "staticlib"]
 travis-ci = { repository = "kpcyrd/boxxy-rs" }
 
 [workspace]
-members = ["autoboxxy"]
+members = ["autoboxxy", "lambdash"]
 
 [features]
 default = ["network", "archives"]
