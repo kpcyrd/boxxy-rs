@@ -14,18 +14,19 @@ pub mod danger {
     use webpki;
 
     use std::iter::repeat;
+    use error::Error;
 
     pub struct PinnedCertificateVerification {}
 
-    fn verify_fingerprint(trusted: &str, cert: &rustls::Certificate) -> Result<(), ()> {
-        let idx = match trusted.find(':') {
+    fn verify_fingerprint(trusted: &str, cert: &rustls::Certificate) -> Result<(), Error> {
+        let idx = match trusted.find('-') {
             Some(idx) => idx,
-            None => return Err(()),
+            None => bail!("malformed fingerprint"),
         };
 
         let (algo, trusted_fp) = trusted.split_at(idx);
 
-        let trusted_fp = base64::decode(&trusted_fp[1..]).unwrap();
+        let trusted_fp = base64::decode_config(&trusted_fp[1..], base64::URL_SAFE_NO_PAD).unwrap();
 
         let fingerprint = match algo {
             "SHA256" => {
@@ -36,13 +37,13 @@ pub mod danger {
                 h.result(&mut buf);
                 buf
             },
-            _ => return Err(()),
+            _ => bail!("unknown hash alog"),
         };
 
         if trusted_fp == fingerprint {
             Ok(())
         } else {
-            Err(())
+            Err("untrusted fingerprint".into())
         }
     }
 

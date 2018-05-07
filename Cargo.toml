@@ -29,7 +29,7 @@ log = "0.4"
 clap = { version = "2", default-features = false }
 libc = "0.2"
 errno = "0.2"
-regex = "0.2"
+regex = "1.0"
 nix = "0.10"
 base64 = "0.9"
 error-chain = "0.11"
