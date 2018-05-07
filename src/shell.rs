@@ -18,6 +18,9 @@ use std::collections::HashMap;
 #[cfg(unix)]
 use std::os::unix::io::{RawFd, AsRawFd};
 
+#[cfg(unix)]
+use ffi::daemonize;
+
 
 #[derive(Clone)]
 pub enum Command {
@@ -29,12 +32,23 @@ pub type NativeCommand = fn(&mut Shell, Vec<String>) -> Result<(), Error>;
 
 
 impl Command {
-    fn run(&self, mut sh: &mut Shell, args: Vec<String>) -> Result<(), Error> {
+    pub fn run(&self, mut sh: &mut Shell, args: Vec<String>) -> Result<(), Error> {
         use self::Command::*;
         match *self {
             Native(ref func)  => func(&mut sh, args),
             Foreign(ref func) => func.run(args),
         }
+    }
+
+    #[cfg(unix)]
+    pub fn daemonized(&self, sh: &Shell, args: Vec<String>) -> Result<(), Error> {
+        daemonize(sh.daemon_clone(), self.clone(), args)
+    }
+
+    #[cfg(not(unix))]
+    pub fn daemonized(&self, sh: &Shell, args: Vec<String>) -> Result<(), Error> {
+        // not implemented, execute in same process
+        self.run(&mut sh.daemon_clone(), args)
     }
 }
 
@@ -417,19 +431,22 @@ impl Shell {
         toolbox.insert(name, command);
     }
 
-    fn process(&mut self, prog: &str, args: Vec<String>) {
-        debug!("prog: {:?}, args: {:?}", prog, args);
+    fn process(&mut self, cmd: InputCmd) {
+        debug!("cmd: {:?}", cmd);
 
         let result: Option<Command> = {
             let toolbox = self.toolbox.lock().unwrap();
-            match toolbox.get(&prog) {
+            match toolbox.get(&cmd.prog) {
                 Some(x) => Some(x.clone()),
                 None => None,
             }
         };
 
         let result = match result {
-            Some(func) => func.run(self, args),
+            Some(func) => match cmd.bg {
+                true => func.daemonized(&self, cmd.args),
+                false => func.run(self, cmd.args),
+            },
             None => Err(ErrorKind::Args(clap::Error {
                 message: String::from("\u{1b}[1;31merror:\u{1b}[0m unknown command"),
                 kind: clap::ErrorKind::MissingRequiredArgument,
@@ -445,13 +462,22 @@ impl Shell {
         }
     }
 
+    fn daemon_clone(&self) -> Shell {
+        let toolbox = self.toolbox.clone();
+        let ui = Interface::fancy(toolbox.clone());
+        Shell {
+            ui,
+            toolbox,
+        }
+    }
+
     #[inline]
     fn prompt(&mut self) -> Result<String, PromptError> {
         self.ui.readline(" [%]> ")
     }
 
     #[inline]
-    fn get_line(&mut self) -> Result<Option<(String, Vec<String>)>, ()> {
+    fn get_line(&mut self) -> Result<Option<InputCmd>, ()> {
         let readline = self.prompt();
 
         match readline {
@@ -465,8 +491,8 @@ impl Shell {
 
     #[inline]
     pub fn exec_once(&mut self, line: &str) {
-        if let Some((prog, args)) = parse_line(line) {
-            self.process(&prog, args);
+        if let Some(cmd) = parse_line(line) {
+            self.process(cmd);
         }
     }
 
@@ -484,9 +510,7 @@ impl Shell {
     pub fn run(&mut self) {
         loop {
             match self.get_line() {
-                Ok(Some((prog, args))) => {
-                    self.process(&prog, args);
-                },
+                Ok(Some(cmd)) => self.process(cmd),
                 Ok(None) => (),
                 Err(_) => break,
             }
@@ -532,12 +556,25 @@ fn tokenize(line: &str) -> Vec<String> {
 }
 
 
+#[derive(Debug, PartialEq)]
+pub struct InputCmd {
+    prog: String,
+    args: Vec<String>,
+    bg: bool,
+}
+
+
 #[inline]
-fn parse_line(line: &str) -> Option<(String, Vec<String>)> {
+fn parse_line(line: &str) -> Option<InputCmd> {
     trace!("line: {:?}", line);
     if is_comment(&line) {
         return None;
     }
+
+    let (bg, line) = match line.ends_with(" &") {
+        true => (true, &line[..line.len()-2]),
+        false => (false, line),
+    };
 
     let cmd = tokenize(&line);
     debug!("got {:?}", cmd);
@@ -546,7 +583,11 @@ fn parse_line(line: &str) -> Option<(String, Vec<String>)> {
         None
     } else {
         let prog = cmd[0].clone();
-        Some((prog, cmd))
+        Some(InputCmd {
+            prog,
+            args: cmd,
+            bg,
+        })
     }
 }
 
@@ -599,5 +640,15 @@ mod tests {
         assert_eq!(false, is_comment(""));
         assert_eq!(false, is_comment("  "));
         assert_eq!(true, is_comment("  # x"));
+    }
+
+    #[test]
+    fn test_bg() {
+        let cmd = parse_line("foo bar &");
+        assert_eq!(Some(InputCmd {
+            prog: "foo".to_string(),
+            args: vec!["foo".to_string(), "bar".to_string()],
+            bg: true,
+        }), cmd);
     }
 }

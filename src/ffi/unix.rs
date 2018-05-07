@@ -1,5 +1,6 @@
 use libc::{self, uid_t, gid_t};
 use errno::errno;
+use shell;
 
 use ::{Result, ErrorKind};
 
@@ -64,4 +65,52 @@ pub fn getgroups() -> Result<Vec<gid_t>> {
     }
 }
 
+#[derive(Debug)]
+pub enum Fork {
+    Parent(i32),
+    Child,
+}
 
+pub fn fork() -> Result<Fork> {
+    let ret = unsafe { libc::fork() };
+    if ret < 0 {
+        let err = errno();
+        Err(ErrorKind::Errno(err).into())
+    } else if ret > 0 {
+        Ok(Fork::Parent(ret))
+    } else {
+        Ok(Fork::Child)
+    }
+}
+
+pub fn waitpid(pid: i32) {
+    unsafe { libc::waitpid(pid, ::std::ptr::null_mut(), 0) };
+}
+
+
+pub fn daemonize(mut shell: shell::Shell, func: shell::Command, args: Vec<String>) -> Result<()> {
+    match fork()? {
+        Fork::Parent(pid) => {
+            unsafe { libc::waitpid(pid, ::std::ptr::null_mut(), 0) };
+        },
+        Fork::Child => {
+            let ret = unsafe { libc::setsid() };
+            if ret < 0 {
+                let err = errno();
+                println!("{:?}", ErrorKind::Errno(err));
+                ::std::process::exit(1);
+            }
+
+            if let Fork::Parent(_) = fork()? {
+                ::std::process::exit(0);
+            }
+
+
+            ::std::process::exit(match func.run(&mut shell, args) {
+                Ok(_) => 0,
+                Err(_) => 1,
+            });
+        }
+    }
+    Ok(())
+}
