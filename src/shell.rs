@@ -130,6 +130,7 @@ impl Toolbox {
             ("echo"         , busybox::echo),
             ("exec"         , busybox::exec),
             ("grep"         , busybox::grep),
+            ("help"         , busybox::help),
             ("ls"           , busybox::ls),
             ("mkdir"        , busybox::mkdir),
             ("pwd"          , busybox::pwd),
@@ -380,6 +381,12 @@ impl Shell {
             },
             _ => shprintln!(self, "[-] interface is already downgraded"),
         }
+    }
+
+    #[inline]
+    pub fn list_commands(&self) -> Vec<String> {
+        let toolbox = self.toolbox.lock().unwrap();
+        toolbox.keys()
     }
 
     #[inline]
