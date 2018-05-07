@@ -34,6 +34,11 @@
 //!     boxxy::Shell::new(toolbox).run()
 //! }
 //! ```
+
+#![warn(unused_extern_crates)]
+#![cfg_attr(feature="clippy", feature(plugin))]
+#![cfg_attr(feature="clippy", plugin(clippy))]
+
 extern crate rustyline;
 #[macro_use] extern crate log;
 extern crate clap;
