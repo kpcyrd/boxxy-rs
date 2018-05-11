@@ -461,8 +461,9 @@ pub fn ls(sh: &mut Shell, args: Arguments) -> Result<()> {
         .arg(Arg::with_name("path")
             .multiple(true)
         )
-        .arg(Arg::with_name("long").short("l"))
-        .arg(Arg::with_name("a").short("a"))
+        .arg(Arg::with_name("long").short("l").help("Show more infos"))
+        .arg(Arg::with_name("a").short("a").help("Dummy option"))
+        .arg(Arg::with_name("h").short("h").help("Dummy option"))
         .get_matches_from_safe(args)?;
 
     let long = matches.occurrences_of("long") > 0;
