@@ -57,3 +57,4 @@ caps = "0.2"
 [dev-dependencies]
 env_logger = "0.5"
 elf = "0.0.10"
+ctrlc = "3.1.0"
