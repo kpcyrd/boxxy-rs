@@ -1,3 +1,4 @@
+#![cfg_attr(not(unix), allow(unused_imports, dead_code))]
 extern crate boxxy;
 extern crate env_logger;
 extern crate libc;

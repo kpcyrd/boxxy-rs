@@ -1,3 +1,4 @@
+#![cfg_attr(not(unix), allow(unused_imports, dead_code))]
 extern crate libc;
 extern crate ctrlc;
 extern crate clap;
@@ -8,15 +9,17 @@ use std::thread;
 use std::time::Instant;
 use std::process::Command;
 use std::sync::{Arc, Mutex};
-use std::os::unix::net::UnixStream;
-use std::os::unix::net::UnixListener;
 use std::io::prelude::*;
+#[cfg(unix)]
+use std::os::unix::net::{UnixStream, UnixListener};
+#[cfg(unix)]
 use std::os::unix::io::{RawFd, IntoRawFd, FromRawFd};
 
 use clap::{App, Arg, AppSettings};
 
 
 #[inline]
+#[cfg(unix)]
 fn from(fd: RawFd) -> UnixStream {
     unsafe { UnixStream::from_raw_fd(fd) }
 }
@@ -49,6 +52,7 @@ fn ctrlc(exit: Arc<Mutex<Instant>>) {
     }
 }
 
+#[cfg(unix)]
 fn main() {
     let matches = App::new("ipc-listener")
         .setting(AppSettings::DisableVersion)
@@ -93,4 +97,9 @@ fn main() {
 
     t1.join().unwrap();
     t2.join().unwrap();
+}
+
+#[cfg(not(unix))]
+fn main() {
+    panic!("unsupported platform");
 }
