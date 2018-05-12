@@ -1,15 +1,19 @@
 extern crate libc;
 extern crate ctrlc;
+extern crate clap;
 
 use std::io;
 use std::fs;
 use std::thread;
 use std::time::Instant;
+use std::process::Command;
 use std::sync::{Arc, Mutex};
 use std::os::unix::net::UnixStream;
 use std::os::unix::net::UnixListener;
 use std::io::prelude::*;
 use std::os::unix::io::{RawFd, IntoRawFd, FromRawFd};
+
+use clap::{App, Arg, AppSettings};
 
 
 #[inline]
@@ -18,9 +22,9 @@ fn from(fd: RawFd) -> UnixStream {
 }
 
 fn pipe(mut r: impl Read, mut w: impl Write) {
-    loop {
-        let mut buf = [0; 1024];
+    let mut buf = [0; 1024];
 
+    loop {
         let n = r.read(&mut buf).expect("read");
 
         // read until EOF
@@ -28,7 +32,8 @@ fn pipe(mut r: impl Read, mut w: impl Write) {
             break;
         }
 
-        w.write(&buf).expect("write");
+        w.write(&buf[..n]).expect("write");
+        w.flush().expect("flush");
     }
 }
 
@@ -45,7 +50,20 @@ fn ctrlc(exit: Arc<Mutex<Instant>>) {
 }
 
 fn main() {
-    let path = "/tmp/boxxy";
+    let matches = App::new("ipc-listener")
+        .setting(AppSettings::DisableVersion)
+        .arg(Arg::with_name("path")
+            .help("unix domain socket path")
+            .required(true)
+        )
+        .arg(Arg::with_name("script")
+            .help("execute this script after bind")
+        )
+        .get_matches();
+
+    let path = matches.value_of("path").unwrap();
+    let script = matches.value_of("script");
+
     fs::remove_file(path).ok();
     let listener = UnixListener::bind(path).expect("bind");
 
@@ -55,9 +73,17 @@ fn main() {
     }).expect("Error setting Ctrl-C handler");
 
     eprintln!("[*] listening on {:?}...", path);
-    let (stream, addr) = listener.accept().expect("accept");
 
+    if let Some(script) = script {
+        eprintln!("[*] running {:?}", script);
+        Command::new("sh")
+            .args(&["-c", script])
+            .status().expect("exec");
+    }
+
+    let (stream, addr) = listener.accept().expect("accept");
     eprintln!("[+] connected: {:?}", addr);
+
     let f = stream.into_raw_fd();
 
     let fd = f.clone();
