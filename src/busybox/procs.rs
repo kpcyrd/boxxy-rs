@@ -40,6 +40,7 @@ pub fn echo(sh: &mut Shell, args: Arguments) -> Result<()> {
 pub fn jit(sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("jit")
         .setting(AppSettings::DisableVersion)
+        .about("Execute shell code")
         .arg(Arg::with_name("hex")
             .help("shellcode is hex encoded")
             .short("x")

@@ -65,6 +65,7 @@ cfg_if! {
 pub fn setuid(_sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("setuid")
         .setting(AppSettings::DisableVersion)
+        .about("Call setuid(2)")
         .arg(Arg::with_name("uid").required(true))
         .get_matches_from_safe(args)?;
 
@@ -78,6 +79,7 @@ pub fn setuid(_sh: &mut Shell, args: Arguments) -> Result<()> {
 pub fn seteuid(_sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("seteuid")
         .setting(AppSettings::DisableVersion)
+        .about("Call seteuid(2)")
         .arg(Arg::with_name("uid").required(true))
         .get_matches_from_safe(args)?;
 
@@ -98,6 +100,7 @@ pub fn seteuid(_sh: &mut Shell, args: Arguments) -> Result<()> {
 pub fn setreuid(_sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("setreuid")
         .setting(AppSettings::DisableVersion)
+        .about("Call setreuid(2)")
         .arg(Arg::with_name("ruid").required(true))
         .arg(Arg::with_name("euid").required(true))
         .get_matches_from_safe(args)?;
@@ -120,6 +123,7 @@ pub fn setreuid(_sh: &mut Shell, args: Arguments) -> Result<()> {
 pub fn setresuid(_sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("setresuid")
         .setting(AppSettings::DisableVersion)
+        .about("Call setresuid(2)")
         .arg(Arg::with_name("ruid").required(true))
         .arg(Arg::with_name("euid").required(true))
         .arg(Arg::with_name("suid").required(true))
@@ -144,6 +148,7 @@ pub fn setresuid(_sh: &mut Shell, args: Arguments) -> Result<()> {
 pub fn setgid(_sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("setgid")
         .setting(AppSettings::DisableVersion)
+        .about("Call setgid(2)")
         .arg(Arg::with_name("gid")
             .required(true)
         )
@@ -166,6 +171,7 @@ pub fn setgid(_sh: &mut Shell, args: Arguments) -> Result<()> {
 pub fn setresgid(_sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("setresgid")
         .setting(AppSettings::DisableVersion)
+        .about("Call setresgid(2)")
         .arg(Arg::with_name("rgid").required(true))
         .arg(Arg::with_name("egid").required(true))
         .arg(Arg::with_name("sgid").required(true))
@@ -190,9 +196,11 @@ pub fn setresgid(_sh: &mut Shell, args: Arguments) -> Result<()> {
 pub fn setgroups(_sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("setgroups")
         .setting(AppSettings::DisableVersion)
+        .about("Call setgroups(2)")
         .arg(Arg::with_name("group")
             .required(true)
             .multiple(true)
+            .help("The groups that should be set")
         )
         .get_matches_from_safe(args)?;
 
