@@ -98,6 +98,7 @@ impl Completer for CmdCompleter {
 
 
 /// The set of registered commands.
+#[derive(Default)]
 pub struct Toolbox(HashMap<String, Command>);
 
 impl Toolbox {
@@ -449,12 +450,10 @@ impl Shell {
             }
         };
 
-        let result = match result {
-            Some(func) => match cmd.bg {
-                true => func.daemonized(&self, cmd.args),
-                false => func.run(self, cmd.args),
-            },
-            None => Err(ErrorKind::Args(clap::Error {
+        let result = match (result, cmd.bg) {
+            (Some(func), true) => func.daemonized(&self, cmd.args),
+            (Some(func), false) => func.run(self, cmd.args),
+            (None, _) => Err(ErrorKind::Args(clap::Error {
                 message: String::from("\u{1b}[1;31merror:\u{1b}[0m unknown command"),
                 kind: clap::ErrorKind::MissingRequiredArgument,
                 info: None,
@@ -541,7 +540,7 @@ fn tokenize(line: &str) -> Vec<String> {
 
         match x {
             ' ' | '\n' => {
-                if token.len() > 0 {
+                if !token.is_empty() {
                     cmd.push(token);
                     token = String::new();
                 }
@@ -555,8 +554,8 @@ fn tokenize(line: &str) -> Vec<String> {
         }
     }
 
-    if token.len() > 0 {
-            cmd.push(token);
+    if !token.is_empty() {
+        cmd.push(token);
     }
 
     cmd
@@ -578,15 +577,16 @@ fn parse_line(line: &str) -> Option<InputCmd> {
         return None;
     }
 
-    let (bg, line) = match line.ends_with(" &") {
-        true => (true, &line[..line.len()-2]),
-        false => (false, line),
+    let (bg, line) = if line.ends_with(" &") {
+        (true, &line[..line.len()-2])
+    } else {
+        (false, line)
     };
 
     let cmd = tokenize(&line);
     debug!("got {:?}", cmd);
 
-    if cmd.len() == 0 {
+    if cmd.is_empty() {
         None
     } else {
         let prog = cmd[0].clone();

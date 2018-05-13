@@ -83,7 +83,7 @@ pub enum Interface {
     Stdio(BufStream<RW<io::Stdin, io::Stdout>>),
     File(BufStream<RW<File, File>>),
     #[cfg(feature="network")]
-    Tls(BufStream<OwnedTlsStream>),
+    Tls(Box<BufStream<OwnedTlsStream>>),
     #[cfg(all(unix, feature="network"))]
     Ipc(BufStream<UnixStream>),
     Dummy(Vec<u8>),
@@ -115,13 +115,13 @@ impl Interface {
     }
 
     pub fn readline_raw<RW: BufRead + Write>(prompt: &str, x: &mut RW) -> Result<String, PromptError> {
-        x.write(prompt.as_bytes())?;
+        x.write_all(prompt.as_bytes())?;
         x.flush()?;
 
         let mut buf = String::new();
         x.read_line(&mut buf)?;
 
-        if buf.len() == 0 {
+        if buf.is_empty() {
             return Err(PromptError::Eof)
         }
 

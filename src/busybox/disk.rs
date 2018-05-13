@@ -205,7 +205,7 @@ pub fn grep(sh: &mut Shell, args: Arguments) -> Result<()> {
 #[derive(Debug)]
 enum ArchiveReader {
     File(File),
-    Gzip(gzip::Decoder<File>),
+    Gzip(Box<gzip::Decoder<File>>),
 }
 
 #[cfg(feature="archives")]
@@ -221,7 +221,7 @@ impl Read for ArchiveReader {
 #[cfg(feature="archives")]
 enum ArchiveWriter {
     File(File),
-    Gzip(gzip::Encoder<File>),
+    Gzip(Box<gzip::Encoder<File>>),
 }
 
 #[cfg(feature="archives")]
@@ -267,7 +267,7 @@ impl Compression {
     fn open(&self, path: &str) -> Result<ArchiveReader> {
         let file = File::open(path)?;
         match *self {
-            Compression::Gzip => Ok(ArchiveReader::Gzip(gzip::Decoder::new(file)?)),
+            Compression::Gzip => Ok(ArchiveReader::Gzip(Box::new(gzip::Decoder::new(file)?))),
             Compression::None => Ok(ArchiveReader::File(file)),
         }
     }
@@ -276,7 +276,7 @@ impl Compression {
     fn create(&self, path: &str) -> Result<ArchiveWriter> {
         let file = File::create(path)?;
         match *self {
-            Compression::Gzip => Ok(ArchiveWriter::Gzip(gzip::Encoder::new(file)?)),
+            Compression::Gzip => Ok(ArchiveWriter::Gzip(Box::new(gzip::Encoder::new(file)?))),
             Compression::None => Ok(ArchiveWriter::File(file)),
         }
     }
@@ -333,9 +333,10 @@ pub fn tar(sh: &mut Shell, args: Arguments) -> Result<()> {
         None => vec![],
     };
 
-    let compression = match gz {
-        true => Compression::Gzip,
-        false => Compression::None,
+    let compression = if gz {
+        Compression::Gzip
+    } else {
+        Compression::None
     };
 
     if extract {
@@ -353,7 +354,7 @@ pub fn tar(sh: &mut Shell, args: Arguments) -> Result<()> {
         let mut ar = tar::Archive::new(file);
         ar.unpack(dest)?;
     } else if create {
-        if paths.len() == 0 {
+        if paths.is_empty() {
             bail!("paths is required with create");
         }
 
@@ -593,9 +594,10 @@ pub fn rm(sh: &mut Shell, args: Arguments) -> Result<()> {
     for path in matches.values_of("path").unwrap() {
         debug!("rm: {:?}", path);
 
-        let result = match recursive {
-            true  => fs::remove_dir_all(path),
-            false => fs::remove_file(path),
+        let result = if recursive {
+            fs::remove_dir_all(path)
+        } else {
+            fs::remove_file(path)
         };
 
         if let Err(err) = result {

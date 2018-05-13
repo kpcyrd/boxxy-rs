@@ -20,33 +20,29 @@ pub extern fn boxxy_run() {
 
 /// Extend the shell struct with additional commands.
 #[no_mangle]
-pub extern fn boxxy_with(target: *mut Shell, name: *const libc::c_char, ptr: ForeignCommand) {
-    let name = unsafe {
-        let bytes = CStr::from_ptr(name).to_bytes();
-        String::from_utf8(bytes.to_vec()).expect("Invalid UTF8 string")
-    };
+pub unsafe extern fn boxxy_with(target: *mut Shell, name: *const libc::c_char, ptr: ForeignCommand) {
+    let bytes = CStr::from_ptr(name).to_bytes();
+    let name = String::from_utf8(bytes.to_vec()).expect("Invalid UTF8 string");
 
     debug!("registering: {:?} -> {:?}", name, ptr);
-    unsafe { (&mut *target) }.insert(name, ptr.into());
+    (&mut *target).insert(name, ptr.into());
 }
 
 /// Execute a single command.
 #[no_mangle]
-pub extern fn boxxy_exec_once_at(target: *mut Shell, cmd: *const libc::c_char) -> i32 {
-    let cmd = unsafe {
-        let bytes = CStr::from_ptr(cmd).to_bytes();
-        String::from_utf8(bytes.to_vec()).expect("Invalid UTF8 string")
-    };
+pub unsafe extern fn boxxy_exec_once_at(target: *mut Shell, cmd: *const libc::c_char) -> i32 {
+    let bytes = CStr::from_ptr(cmd).to_bytes();
+    let cmd = String::from_utf8(bytes.to_vec()).expect("Invalid UTF8 string");
 
-    unsafe { (&mut *target) }.exec_once(&cmd);
+    (&mut *target).exec_once(&cmd);
 
     0
 }
 
 /// Start shell at specific pointer.
 #[no_mangle]
-pub extern fn boxxy_run_at(target: *mut Shell) {
-    unsafe { (&mut *target) }.run()
+pub unsafe extern fn boxxy_run_at(target: *mut Shell) {
+    (&mut *target).run()
 }
 
 /// Free memory.

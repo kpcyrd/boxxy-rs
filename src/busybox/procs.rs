@@ -53,9 +53,10 @@ pub fn jit(sh: &mut Shell, args: Arguments) -> Result<()> {
     let hex = matches.occurrences_of("hex") > 0;
 
     let shellcode = matches.value_of("shellcode").unwrap();
-    let mut shellcode: Vec<u8> = match hex {
-        true => unhexify(shellcode)?,
-        false => base64::decode(shellcode)?,
+    let mut shellcode: Vec<u8> = if hex {
+        unhexify(shellcode)?
+    } else {
+        base64::decode(shellcode)?
     };
 
     const PAGE_SIZE: usize = 4096;
@@ -132,7 +133,7 @@ fn unhexify(input: &str) -> Result<Vec<u8>> {
         .filter(|x| *x != '\"' && *x != '\\')
         .collect();
 
-    let bytes = bytes.chunks(3)
+    bytes.chunks(3)
         .map(|x| {
             if x.len() != 3 || x[0] != 'x' {
                 bail!("invalid byte")
@@ -144,9 +145,7 @@ fn unhexify(input: &str) -> Result<Vec<u8>> {
 
             let byte = u8::from_str_radix(&buf, 16)?;
             Ok(byte)
-        }).collect();
-
-    bytes
+        }).collect()
 }
 
 

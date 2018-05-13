@@ -253,9 +253,10 @@ pub fn caps(sh: &mut Shell, args: Arguments) -> Result<()> {
         None => HashSet::new(),
     };
 
-    let capset = match matches.occurrences_of("effective") > 0 {
-        true  => CapSet::Effective,
-        false => CapSet::Permitted,
+    let capset = if matches.is_present("effective") {
+        CapSet::Effective
+    } else {
+        CapSet::Permitted
     };
 
     if clear {
