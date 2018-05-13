@@ -75,6 +75,7 @@ mod error {
     use clap;
     use regex;
     use errno;
+    use base64;
 
     #[cfg(feature="network")]
     use hyper;
@@ -95,6 +96,7 @@ mod error {
             InvalidNum(std::num::ParseIntError);
             InvalidRegex(regex::Error);
             AddrParseError(std::net::AddrParseError);
+            Base64Decode(base64::DecodeError);
             Uri(hyper::error::UriError) #[cfg(feature="network")];
             Http(hyper::Error) #[cfg(feature="network")];
             Caps(caps::errors::Error) #[cfg(target_os="linux")];

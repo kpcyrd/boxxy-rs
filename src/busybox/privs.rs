@@ -204,11 +204,9 @@ pub fn setgroups(_sh: &mut Shell, args: Arguments) -> Result<()> {
         )
         .get_matches_from_safe(args)?;
 
-    let groups: result::Result<Vec<gid_t>, _> = matches.values_of("group").unwrap()
+    let groups = matches.values_of("group").unwrap()
         .map(|x| x.parse())
-        .collect();
-
-    let groups = groups?;
+        .collect::<result::Result<Vec<gid_t>, _>>()?;
 
     ffi::setgroups(&groups)?;
 
@@ -249,13 +247,10 @@ pub fn caps(sh: &mut Shell, args: Arguments) -> Result<()> {
     let add = matches.occurrences_of("add") > 0;
     let set = matches.occurrences_of("set") > 0;
 
-    let capabilities = {
-        let capabilities: result::Result<HashSet<_>, _> = match matches.values_of("capabilities") {
-            Some(caps) => caps.map(|c| Capability::from_str(c)).collect(),
-            None => Ok(HashSet::new()),
-        };
-
-        capabilities?
+    let capabilities = match matches.values_of("capabilities") {
+        Some(caps) => caps.map(|c| Capability::from_str(c))
+                          .collect::<result::Result<_, _>>()?,
+        None => HashSet::new(),
     };
 
     let capset = match matches.occurrences_of("effective") > 0 {

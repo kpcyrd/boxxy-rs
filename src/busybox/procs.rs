@@ -8,7 +8,6 @@ use ::{Result, Shell, Arguments};
 
 #[cfg(unix)]
 use std::mem;
-use std::result;
 use std::process::Command;
 
 #[cfg(unix)]
@@ -54,12 +53,9 @@ pub fn jit(sh: &mut Shell, args: Arguments) -> Result<()> {
     let hex = matches.occurrences_of("hex") > 0;
 
     let shellcode = matches.value_of("shellcode").unwrap();
-    let mut shellcode: Vec<u8> = {
-        if hex {
-            unhexify(shellcode).unwrap()
-        } else {
-            base64::decode(shellcode).unwrap()
-        }
+    let mut shellcode: Vec<u8> = match hex {
+        true => unhexify(shellcode)?,
+        false => base64::decode(shellcode)?,
     };
 
     const PAGE_SIZE: usize = 4096;
@@ -129,7 +125,7 @@ pub fn exec(sh: &mut Shell, mut args: Arguments) -> Result<()> {
 }
 
 
-fn unhexify(input: &str) -> result::Result<Vec<u8>, ()> {
+fn unhexify(input: &str) -> Result<Vec<u8>> {
     // the escape sequence parser translates "\xFF" to "xFF",
     // so work with that for now
     let bytes: Vec<char> = input.chars()
@@ -139,14 +135,15 @@ fn unhexify(input: &str) -> result::Result<Vec<u8>, ()> {
     let bytes = bytes.chunks(3)
         .map(|x| {
             if x.len() != 3 || x[0] != 'x' {
-                return Err(());
+                bail!("invalid byte")
             }
 
             let mut buf = String::new();
             buf.push(x[1]);
             buf.push(x[2]);
 
-            u8::from_str_radix(&buf, 16).or(Err(()))
+            let byte = u8::from_str_radix(&buf, 16)?;
+            Ok(byte)
         }).collect();
 
     bytes
