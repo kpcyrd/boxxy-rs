@@ -26,21 +26,27 @@ use std::os::unix::net::UnixStream;
 pub fn curl(sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("curl")
         .setting(AppSettings::DisableVersion)
+        .about("Poor mans curl")
         .arg(Arg::with_name("verbose")
             .short("v")
+            .help("Verbose output")
         )
         .arg(Arg::with_name("output")
             .short("o")
             .takes_value(true)
+            .help("Write response to file")
         )
         .arg(Arg::with_name("remote-name")
             .short("O")
+            .help("Download file and use the remote filename")
         )
         .arg(Arg::with_name("location")
             .short("L")
+            .help("Follow redirects")
         )
         .arg(Arg::with_name("url")
             .required(true)
+            .help("Fetch this url")
         )
         .get_matches_from_safe(args)?;
 
@@ -120,7 +126,7 @@ pub fn curl(sh: &mut Shell, args: Arguments) -> Result<()> {
         Some(path) => {
             let mut file = File::create(&path)?;
             // TODO: don't buffer the full response
-            file.write(&res.to_vec())?;
+            file.write_all(&res.to_vec())?;
             shprintln!(sh, "downloaded to: {:?}", path);
         },
         None => {
@@ -141,13 +147,20 @@ pub fn curl(sh: &mut Shell, args: Arguments) -> Result<()> {
 pub fn revshell(sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("revshell")
         .setting(AppSettings::DisableVersion)
+        .about("Create a tls connection and connect the interface to it")
         .arg(Arg::with_name("loop")
             .short("l")
             .long("loop")
             .help("Explicitly execute main loop again")
         )
-        .arg(Arg::with_name("addr").required(true))
-        .arg(Arg::with_name("fingerprint").required(true))
+        .arg(Arg::with_name("addr")
+            .required(true)
+            .help("The address to connect to")
+        )
+        .arg(Arg::with_name("fingerprint")
+            .required(true)
+            .help("The fingerprint of the certificate, see examples/fingerprint.rs")
+        )
         .get_matches_from_safe(args)?;
 
     let addr: SocketAddr = matches.value_of("addr").unwrap().parse()?;
@@ -172,7 +185,7 @@ pub fn revshell(sh: &mut Shell, args: Arguments) -> Result<()> {
     let sock = BufStream::new(sock);
 
     shprintln!(sh, "[*] see you on the other side...");
-    sh.hotswap(Interface::Tls(sock));
+    sh.hotswap(Interface::Tls(Box::new(sock)));
     shprintln!(sh, "[+] hot-swapped interface");
 
     if run_loop {
@@ -187,12 +200,16 @@ pub fn revshell(sh: &mut Shell, args: Arguments) -> Result<()> {
 pub fn ipcshell(sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("ipcshell")
         .setting(AppSettings::DisableVersion)
+        .about("Connect to a unix domain socket and connect the interface to it")
         .arg(Arg::with_name("loop")
             .short("l")
             .long("loop")
             .help("Explicitly execute main loop again")
         )
-        .arg(Arg::with_name("path").required(true))
+        .arg(Arg::with_name("path")
+            .required(true)
+            .help("Unix domain socket path")
+        )
         .get_matches_from_safe(args)?;
 
     let path = matches.value_of("path").unwrap();

@@ -1,4 +1,4 @@
-use clap::{App, Arg, AppSettings};
+use clap::{App, Arg, AppSettings, ArgGroup};
 #[cfg(unix)]
 use libc::{self, mode_t};
 #[cfg(unix)]
@@ -205,7 +205,7 @@ pub fn grep(sh: &mut Shell, args: Arguments) -> Result<()> {
 #[derive(Debug)]
 enum ArchiveReader {
     File(File),
-    Gzip(gzip::Decoder<File>),
+    Gzip(Box<gzip::Decoder<File>>),
 }
 
 #[cfg(feature="archives")]
@@ -221,7 +221,7 @@ impl Read for ArchiveReader {
 #[cfg(feature="archives")]
 enum ArchiveWriter {
     File(File),
-    Gzip(gzip::Encoder<File>),
+    Gzip(Box<gzip::Encoder<File>>),
 }
 
 #[cfg(feature="archives")]
@@ -267,7 +267,7 @@ impl Compression {
     fn open(&self, path: &str) -> Result<ArchiveReader> {
         let file = File::open(path)?;
         match *self {
-            Compression::Gzip => Ok(ArchiveReader::Gzip(gzip::Decoder::new(file)?)),
+            Compression::Gzip => Ok(ArchiveReader::Gzip(Box::new(gzip::Decoder::new(file)?))),
             Compression::None => Ok(ArchiveReader::File(file)),
         }
     }
@@ -276,7 +276,7 @@ impl Compression {
     fn create(&self, path: &str) -> Result<ArchiveWriter> {
         let file = File::create(path)?;
         match *self {
-            Compression::Gzip => Ok(ArchiveWriter::Gzip(gzip::Encoder::new(file)?)),
+            Compression::Gzip => Ok(ArchiveWriter::Gzip(Box::new(gzip::Encoder::new(file)?))),
             Compression::None => Ok(ArchiveWriter::File(file)),
         }
     }
@@ -287,26 +287,45 @@ impl Compression {
 pub fn tar(sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("tar")
         .setting(AppSettings::DisableVersion)
-        .arg(Arg::with_name("extract").short("x"))
-        .arg(Arg::with_name("create").short("c"))
-        .arg(Arg::with_name("file").short("f"))
-        .arg(Arg::with_name("gz").short("z"))
+        .group(ArgGroup::with_name("action")
+            .args(&["extract", "create"])
+            .required(true)
+        )
+        .arg(Arg::with_name("extract")
+            .short("x")
+            .help("Exctract an archive")
+        )
+        .arg(Arg::with_name("create")
+            .short("c")
+            .help("Create an archive")
+        )
+        .arg(Arg::with_name("file")
+            .short("f")
+            .help("Dummy flag")
+        )
+        .arg(Arg::with_name("gz")
+            .short("z")
+            .help("Use gzip compression")
+        )
         .arg(Arg::with_name("verbose")
             .short("v")
             .multiple(true)
+            .help("Verbose output")
         )
         .arg(Arg::with_name("archive")
             .required(true)
+            .help("Archive path")
         )
         .arg(Arg::with_name("path")
             .multiple(true)
         )
         .get_matches_from_safe(args)?;
 
-    let extract = matches.occurrences_of("extract") > 0;
-    let create = matches.occurrences_of("create") > 0;
+    // TODO: -t
+    let extract = matches.is_present("extract");
+    let create = matches.is_present("create");
     let verbose = matches.occurrences_of("verbose");
-    let gz = matches.occurrences_of("gz") > 0;
+    let gz = matches.is_present("gz");
     let archive = matches.value_of("archive").unwrap();
 
     let paths = match matches.values_of("path") {
@@ -314,18 +333,10 @@ pub fn tar(sh: &mut Shell, args: Arguments) -> Result<()> {
         None => vec![],
     };
 
-    // TODO: -t
-    // if (extract && create) || !(extract || create) {
-    if !(extract ^ create) {
-        bail!("extract xor create needed");
-    }
-
-    let compression = {
-        if gz {
-            Compression::Gzip
-        } else {
-            Compression::None
-        }
+    let compression = if gz {
+        Compression::Gzip
+    } else {
+        Compression::None
     };
 
     if extract {
@@ -343,7 +354,7 @@ pub fn tar(sh: &mut Shell, args: Arguments) -> Result<()> {
         let mut ar = tar::Archive::new(file);
         ar.unpack(dest)?;
     } else if create {
-        if paths.len() == 0 {
+        if paths.is_empty() {
             bail!("paths is required with create");
         }
 
@@ -461,11 +472,12 @@ pub fn ls(sh: &mut Shell, args: Arguments) -> Result<()> {
         .arg(Arg::with_name("path")
             .multiple(true)
         )
-        .arg(Arg::with_name("long").short("l"))
-        .arg(Arg::with_name("a").short("a"))
+        .arg(Arg::with_name("long").short("l").help("Show more infos"))
+        .arg(Arg::with_name("a").short("a").help("Dummy option"))
+        .arg(Arg::with_name("h").short("h").help("Dummy option"))
         .get_matches_from_safe(args)?;
 
-    let long = matches.occurrences_of("long") > 0;
+    let long = matches.is_present("long");
 
     let paths = match matches.values_of("path") {
         Some(paths) => paths.into_iter().collect(),
@@ -582,14 +594,14 @@ pub fn rm(sh: &mut Shell, args: Arguments) -> Result<()> {
     for path in matches.values_of("path").unwrap() {
         debug!("rm: {:?}", path);
 
-        let result = match recursive {
-            true  => fs::remove_dir_all(path),
-            false => fs::remove_file(path),
+        let result = if recursive {
+            fs::remove_dir_all(path)
+        } else {
+            fs::remove_file(path)
         };
 
-        match result {
-            Ok(_) => (),
-            Err(err) => shprintln!(sh, "rm: {:?}: {:?}", path, err),
+        if let Err(err) = result {
+            shprintln!(sh, "rm: {:?}: {:?}", path, err);
         }
     }
 

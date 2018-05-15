@@ -34,6 +34,11 @@
 //!     boxxy::Shell::new(toolbox).run()
 //! }
 //! ```
+
+#![warn(unused_extern_crates)]
+#![cfg_attr(feature="clippy", feature(plugin))]
+#![cfg_attr(feature="clippy", plugin(clippy))]
+
 extern crate rustyline;
 #[macro_use] extern crate log;
 extern crate clap;
@@ -75,6 +80,7 @@ mod error {
     use clap;
     use regex;
     use errno;
+    use base64;
 
     #[cfg(feature="network")]
     use hyper;
@@ -95,6 +101,7 @@ mod error {
             InvalidNum(std::num::ParseIntError);
             InvalidRegex(regex::Error);
             AddrParseError(std::net::AddrParseError);
+            Base64Decode(base64::DecodeError);
             Uri(hyper::error::UriError) #[cfg(feature="network")];
             Http(hyper::Error) #[cfg(feature="network")];
             Caps(caps::errors::Error) #[cfg(target_os="linux")];

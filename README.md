@@ -96,9 +96,7 @@ Prepare systemd unit:
 
 Attach to shell:
 
-    sudo nc -Ul /run/boxxy-foo.sock &
-    sudo systemctl start ipc-boxxy@foo
-    fg
+    sudo target/debug/ipc-listener /run/boxxy-foo.sock 'systemctl start ipc-boxxy@foo'
 
 You can run arbitrary commands with `exec`:
 

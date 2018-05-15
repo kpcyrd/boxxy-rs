@@ -65,6 +65,7 @@ cfg_if! {
 pub fn setuid(_sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("setuid")
         .setting(AppSettings::DisableVersion)
+        .about("Call setuid(2)")
         .arg(Arg::with_name("uid").required(true))
         .get_matches_from_safe(args)?;
 
@@ -78,6 +79,7 @@ pub fn setuid(_sh: &mut Shell, args: Arguments) -> Result<()> {
 pub fn seteuid(_sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("seteuid")
         .setting(AppSettings::DisableVersion)
+        .about("Call seteuid(2)")
         .arg(Arg::with_name("uid").required(true))
         .get_matches_from_safe(args)?;
 
@@ -98,6 +100,7 @@ pub fn seteuid(_sh: &mut Shell, args: Arguments) -> Result<()> {
 pub fn setreuid(_sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("setreuid")
         .setting(AppSettings::DisableVersion)
+        .about("Call setreuid(2)")
         .arg(Arg::with_name("ruid").required(true))
         .arg(Arg::with_name("euid").required(true))
         .get_matches_from_safe(args)?;
@@ -120,6 +123,7 @@ pub fn setreuid(_sh: &mut Shell, args: Arguments) -> Result<()> {
 pub fn setresuid(_sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("setresuid")
         .setting(AppSettings::DisableVersion)
+        .about("Call setresuid(2)")
         .arg(Arg::with_name("ruid").required(true))
         .arg(Arg::with_name("euid").required(true))
         .arg(Arg::with_name("suid").required(true))
@@ -144,6 +148,7 @@ pub fn setresuid(_sh: &mut Shell, args: Arguments) -> Result<()> {
 pub fn setgid(_sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("setgid")
         .setting(AppSettings::DisableVersion)
+        .about("Call setgid(2)")
         .arg(Arg::with_name("gid")
             .required(true)
         )
@@ -166,6 +171,7 @@ pub fn setgid(_sh: &mut Shell, args: Arguments) -> Result<()> {
 pub fn setresgid(_sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("setresgid")
         .setting(AppSettings::DisableVersion)
+        .about("Call setresgid(2)")
         .arg(Arg::with_name("rgid").required(true))
         .arg(Arg::with_name("egid").required(true))
         .arg(Arg::with_name("sgid").required(true))
@@ -190,17 +196,17 @@ pub fn setresgid(_sh: &mut Shell, args: Arguments) -> Result<()> {
 pub fn setgroups(_sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("setgroups")
         .setting(AppSettings::DisableVersion)
+        .about("Call setgroups(2)")
         .arg(Arg::with_name("group")
             .required(true)
             .multiple(true)
+            .help("The groups that should be set")
         )
         .get_matches_from_safe(args)?;
 
-    let groups: result::Result<Vec<gid_t>, _> = matches.values_of("group").unwrap()
+    let groups = matches.values_of("group").unwrap()
         .map(|x| x.parse())
-        .collect();
-
-    let groups = groups?;
+        .collect::<result::Result<Vec<gid_t>, _>>()?;
 
     ffi::setgroups(&groups)?;
 
@@ -211,11 +217,26 @@ pub fn setgroups(_sh: &mut Shell, args: Arguments) -> Result<()> {
 pub fn caps(sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("caps")
         .setting(AppSettings::DisableVersion)
-        .arg(Arg::with_name("effective").short("e"))
-        .arg(Arg::with_name("clear").short("c"))
-        .arg(Arg::with_name("drop").short("d"))
-        .arg(Arg::with_name("add").short("a"))
-        .arg(Arg::with_name("set").short("s"))
+        .arg(Arg::with_name("effective")
+                    .short("e")
+                    .long("effective")
+                    .help("Operate on the effective capset instead of the permitted capset"))
+        .arg(Arg::with_name("clear")
+                    .short("c")
+                    .long("clear")
+                    .help("Clear all capabilities"))
+        .arg(Arg::with_name("drop")
+                    .short("d")
+                    .long("drop")
+                    .help("Drop specific capabilities"))
+        .arg(Arg::with_name("add")
+                    .short("a")
+                    .long("add")
+                    .help("Add capabilities to capability set"))
+        .arg(Arg::with_name("set")
+                    .short("s")
+                    .long("set")
+                    .help("Set the capability set"))
         .arg(Arg::with_name("capabilities")
             .multiple(true)
         )
@@ -226,18 +247,16 @@ pub fn caps(sh: &mut Shell, args: Arguments) -> Result<()> {
     let add = matches.occurrences_of("add") > 0;
     let set = matches.occurrences_of("set") > 0;
 
-    let capabilities = {
-        let capabilities: result::Result<HashSet<_>, _> = match matches.values_of("capabilities") {
-            Some(caps) => caps.map(|c| Capability::from_str(c)).collect(),
-            None => Ok(HashSet::new()),
-        };
-
-        capabilities?
+    let capabilities = match matches.values_of("capabilities") {
+        Some(caps) => caps.map(|c| Capability::from_str(c))
+                          .collect::<result::Result<_, _>>()?,
+        None => HashSet::new(),
     };
 
-    let capset = match matches.occurrences_of("effective") > 0 {
-        true  => CapSet::Effective,
-        false => CapSet::Permitted,
+    let capset = if matches.is_present("effective") {
+        CapSet::Effective
+    } else {
+        CapSet::Permitted
     };
 
     if clear {
