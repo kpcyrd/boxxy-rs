@@ -45,6 +45,7 @@ extern crate clap;
 extern crate libc;
 extern crate errno;
 extern crate regex;
+#[cfg(unix)]
 extern crate nix;
 extern crate base64;
 extern crate bufstream;
