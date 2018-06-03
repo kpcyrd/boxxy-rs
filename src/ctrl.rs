@@ -9,6 +9,7 @@ use std::sync::{Arc, Mutex};
 use bufstream::BufStream;
 use std::io;
 use std::io::prelude::*;
+use std::fmt::Debug;
 #[cfg(all(unix, feature="network"))]
 use std::os::unix::net::UnixStream;
 #[cfg(unix)]
@@ -74,6 +75,13 @@ impl<R: Read, W: Write> Write for RW<R, W> {
 }
 
 
+pub trait R: Read + Debug {}
+impl<T> R for T where T: Read + Debug {}
+
+pub trait W: Write + Debug {}
+impl<T> W for T where T: Write + Debug {}
+
+
 /// The interface that the [`Shell`] uses.
 ///
 /// [`Shell`]: ../shell/struct.Shell.html
@@ -82,6 +90,7 @@ pub enum Interface {
     Fancy((io::Stdin, io::Stdout, Editor<CmdCompleter>)),
     Stdio(BufStream<RW<io::Stdin, io::Stdout>>),
     File(BufStream<RW<File, File>>),
+    RWPair(BufStream<RW<Box<R>, Box<W>>>),
     #[cfg(feature="network")]
     Tls(Box<BufStream<OwnedTlsStream>>),
     #[cfg(all(unix, feature="network"))]
@@ -108,6 +117,10 @@ impl Interface {
         let output = output.unwrap_or_else(|| File::open("/dev/null").unwrap());
 
         Interface::File(BufStream::new(RW(input, output)))
+    }
+
+    pub fn rw_pair(input: Box<R>, output: Box<W>) -> Interface {
+        Interface::RWPair(BufStream::new(RW(input, output)))
     }
 
     pub fn dummy() -> Interface {
@@ -138,6 +151,7 @@ impl Interface {
             },
             Interface::Stdio(ref mut x) => Self::readline_raw(prompt, x),
             Interface::File(ref mut x) => Self::readline_raw(prompt, x),
+            Interface::RWPair(ref mut x) => Self::readline_raw(prompt, x),
             #[cfg(feature="network")]
             Interface::Tls(ref mut x) => Self::readline_raw(prompt, x),
             #[cfg(all(unix, feature="network"))]
@@ -152,6 +166,33 @@ impl Interface {
             _ => true,
         }
     }
+
+    #[cfg(unix)]
+    #[inline]
+    pub fn pipe(&mut self) -> Option<(RawFd, RawFd, RawFd)> {
+        match *self {
+            // this connects the real stdio automatically
+            Interface::Fancy(_) => None,
+            Interface::Stdio(ref ui) => {
+                let (r, w) = ui.get_ref().as_raw_fd();
+                Some((r, w, w))
+            },
+            Interface::File(ref ui) => {
+                let (r, w) = ui.get_ref().as_raw_fd();
+                Some((r, w, w))
+            },
+            Interface::RWPair(_) => None,
+            // NOTE: not supported yet
+            #[cfg(feature="network")]
+            Interface::Tls(_) => None,
+            #[cfg(all(unix, feature="network"))]
+            Interface::Ipc(ref ui) => {
+                let fd = ui.get_ref().as_raw_fd();
+                Some((fd, fd, fd))
+            },
+            Interface::Dummy(_) => None,
+        }
+    }
 }
 
 impl Read for Interface {
@@ -160,6 +201,7 @@ impl Read for Interface {
             Interface::Fancy(ref mut x) => x.0.read(buf),
             Interface::Stdio(ref mut x) => x.read(buf),
             Interface::File(ref mut x) => x.read(buf),
+            Interface::RWPair(ref mut x) => x.read(buf),
             #[cfg(feature="network")]
             Interface::Tls(ref mut x) => x.read(buf),
             #[cfg(all(unix, feature="network"))]
@@ -175,6 +217,7 @@ impl Write for Interface {
             Interface::Fancy(ref mut x) => x.1.write(buf),
             Interface::Stdio(ref mut x) => x.write(buf),
             Interface::File(ref mut x) => x.write(buf),
+            Interface::RWPair(ref mut x) => x.write(buf),
             #[cfg(feature="network")]
             Interface::Tls(ref mut x) => x.write(buf),
             #[cfg(all(unix, feature="network"))]
@@ -188,6 +231,7 @@ impl Write for Interface {
             Interface::Fancy(ref mut x) => x.1.flush(),
             Interface::Stdio(ref mut x) => x.flush(),
             Interface::File(ref mut x) => x.flush(),
+            Interface::RWPair(ref mut x) => x.flush(),
             #[cfg(feature="network")]
             Interface::Tls(ref mut x) => x.flush(),
             #[cfg(all(unix, feature="network"))]
