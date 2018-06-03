@@ -1,14 +1,8 @@
-use ::{Result, Shell, Arguments};
+mod downgrade;
+pub use self::downgrade::downgrade;
 
-pub fn downgrade(sh: &mut Shell, _args: Arguments) -> Result<()> {
-    sh.downgrade();
-    Ok(())
-}
+mod echo;
+pub use self::echo::echo;
 
-pub fn help(sh: &mut Shell, _args: Arguments) -> Result<()> {
-    for cmd in sh.list_commands() {
-        shprintln!(sh, "{:?}", cmd);
-    }
-
-    Ok(())
-}
+mod help;
+pub use self::help::help;
