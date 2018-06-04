@@ -39,6 +39,7 @@
 #![cfg_attr(feature="clippy", feature(plugin))]
 #![cfg_attr(feature="clippy", plugin(clippy))]
 
+#[cfg(feature="readline")]
 extern crate rustyline;
 #[macro_use] extern crate log;
 extern crate clap;
