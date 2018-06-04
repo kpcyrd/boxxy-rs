@@ -1,41 +1,12 @@
 use clap::{App, Arg, AppSettings};
-#[cfg(unix)]
 use base64;
-#[cfg(unix)]
 use libc;
 
 use ::{Result, Shell, Arguments};
 
-#[cfg(unix)]
 use std::mem;
-use std::process::Command;
-
-#[cfg(unix)]
-use std::process::Stdio;
-#[cfg(unix)]
-use std::os::unix::io::FromRawFd;
 
 
-pub fn echo(sh: &mut Shell, args: Arguments) -> Result<()> {
-    let msg = match args.len() {
-        0 | 1 => String::new(),
-        _ => {
-            let mut msg = args.into_iter().skip(1)
-                .fold(String::new(), |a, b| {
-                    a + " " + &b
-                });
-            msg.remove(0);
-            msg
-        },
-    };
-
-    shprintln!(sh, "{}", msg);
-
-    Ok(())
-}
-
-
-#[cfg(unix)]
 pub fn jit(sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("jit")
         .setting(AppSettings::DisableVersion)
@@ -84,48 +55,6 @@ pub fn jit(sh: &mut Shell, args: Arguments) -> Result<()> {
     Ok(())
 }
 
-
-pub fn exec(sh: &mut Shell, mut args: Arguments) -> Result<()> {
-    if args.len() < 2 {
-        // triggers an usage errror
-        let _ = App::new("exec")
-            .setting(AppSettings::DisableVersion)
-            .arg(Arg::with_name("prog")
-                .required(true)
-            )
-            .arg(Arg::with_name("args")
-                .multiple(true)
-            )
-            .get_matches_from_safe(args)?;
-    } else {
-        let _ = args.remove(0);
-
-        let prog = args.remove(0);
-
-        let mut child = Command::new(prog);
-        child.args(args);
-
-        #[cfg(unix)]
-        {
-            if let Some((stdin, stdout, stderr)) = sh.pipe() {
-                // if stdio needs redirection
-                // this is only supported on unix
-                unsafe {
-                    child.stdin(Stdio::from_raw_fd(libc::dup(stdin)))
-                        .stdout(Stdio::from_raw_fd(libc::dup(stdout)))
-                        .stderr(Stdio::from_raw_fd(libc::dup(stderr)));
-                }
-            }
-        }
-
-        child.spawn()?
-            .wait()?;
-    }
-
-    Ok(())
-}
-
-
 fn unhexify(input: &str) -> Result<Vec<u8>> {
     // the escape sequence parser translates "\xFF" to "xFF",
     // so work with that for now
@@ -152,26 +81,6 @@ fn unhexify(input: &str) -> Result<Vec<u8>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ctrl;
-    use Toolbox;
-
-    #[inline]
-    fn str_args(args: Vec<&str>) -> Arguments {
-        args.into_iter()
-            .map(|x| x.to_owned())
-            .collect()
-    }
-
-    #[test]
-    fn test_echo() {
-        let mut sh = Shell::new(Toolbox::empty());
-        sh.hotswap(ctrl::Interface::dummy());
-
-        echo(&mut sh, str_args(vec!["echo", "foo"])).unwrap();
-        echo(&mut sh, str_args(vec!["echo", "--", "bar", "asdf"])).unwrap();
-        echo(&mut sh, str_args(vec!["echo"])).unwrap();
-        echo(&mut sh, str_args(vec!["echo", "-x", "--yz"])).unwrap();
-    }
 
     #[test]
     fn test_unhexify() {

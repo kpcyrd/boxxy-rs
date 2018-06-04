@@ -1,5 +1,12 @@
 //! Builtin commands.
 
+macro_rules! import_cmd {
+    ($x:ident) => {
+        mod $x;
+        pub use self::$x::$x;
+    };
+}
+
 /// Disk related commands
 pub mod disk;
 #[cfg(unix)]

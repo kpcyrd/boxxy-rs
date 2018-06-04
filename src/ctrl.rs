@@ -1,7 +1,9 @@
 use Toolbox;
+#[cfg(feature="readline")]
 use shell::CmdCompleter;
 #[cfg(feature="network")]
 use crypto::OwnedTlsStream;
+#[cfg(feature="readline")]
 use rustyline::{self, Editor};
 
 use std::fs::File;
@@ -20,9 +22,11 @@ use std::os::unix::io::{RawFd, AsRawFd};
 pub enum PromptError {
     Io(io::Error),
     Eof,
+    #[cfg(feature="readline")]
     Other(rustyline::error::ReadlineError),
 }
 
+#[cfg(feature="readline")]
 impl From<rustyline::error::ReadlineError> for PromptError {
     fn from(err: rustyline::error::ReadlineError) -> PromptError {
         use rustyline::error::ReadlineError;
@@ -87,6 +91,7 @@ impl<T> W for T where T: Write + Debug {}
 /// [`Shell`]: ../shell/struct.Shell.html
 #[derive(Debug)]
 pub enum Interface {
+    #[cfg(feature="readline")]
     Fancy((io::Stdin, io::Stdout, Editor<CmdCompleter>)),
     Stdio(BufStream<RW<io::Stdin, io::Stdout>>),
     File(BufStream<RW<File, File>>),
@@ -99,6 +104,17 @@ pub enum Interface {
 }
 
 impl Interface {
+    #[allow(unused_variables)]
+    pub fn default(toolbox: &Arc<Mutex<Toolbox>>) -> Interface {
+        #[cfg(feature="readline")]
+        let ui = Interface::fancy(toolbox.clone());
+        #[cfg(not(feature="readline"))]
+        let ui = Interface::stdio();
+
+        ui
+    }
+
+    #[cfg(feature="readline")]
     pub fn fancy(toolbox: Arc<Mutex<Toolbox>>) -> Interface {
         let mut rl = Editor::new();
         let c = CmdCompleter::new(toolbox);
@@ -145,6 +161,7 @@ impl Interface {
 
     pub fn readline(&mut self, prompt: &str) -> Result<String, PromptError> {
         match *self {
+            #[cfg(feature="readline")]
             Interface::Fancy(ref mut x) => {
                 let buf = x.2.readline(prompt)?;
                 Ok(buf)
@@ -160,10 +177,10 @@ impl Interface {
         }
     }
 
-    pub fn add_history_entry(&mut self, line: &str) -> bool {
-        match *self {
-            Interface::Fancy(ref mut x) => x.2.add_history_entry(line),
-            _ => true,
+    #[cfg(feature="readline")]
+    pub fn add_history_entry(&mut self, line: &str) {
+        if let Interface::Fancy(ref mut x) = *self {
+            x.2.add_history_entry(line);
         }
     }
 
@@ -172,6 +189,7 @@ impl Interface {
     pub fn pipe(&mut self) -> Option<(RawFd, RawFd, RawFd)> {
         match *self {
             // this connects the real stdio automatically
+            #[cfg(feature="readline")]
             Interface::Fancy(_) => None,
             Interface::Stdio(ref ui) => {
                 let (r, w) = ui.get_ref().as_raw_fd();
@@ -198,6 +216,7 @@ impl Interface {
 impl Read for Interface {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         match *self {
+            #[cfg(feature="readline")]
             Interface::Fancy(ref mut x) => x.0.read(buf),
             Interface::Stdio(ref mut x) => x.read(buf),
             Interface::File(ref mut x) => x.read(buf),
@@ -214,6 +233,7 @@ impl Read for Interface {
 impl Write for Interface {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         match *self {
+            #[cfg(feature="readline")]
             Interface::Fancy(ref mut x) => x.1.write(buf),
             Interface::Stdio(ref mut x) => x.write(buf),
             Interface::File(ref mut x) => x.write(buf),
@@ -228,6 +248,7 @@ impl Write for Interface {
 
     fn flush(&mut self) -> io::Result<()> {
         match *self {
+            #[cfg(feature="readline")]
             Interface::Fancy(ref mut x) => x.1.flush(),
             Interface::Stdio(ref mut x) => x.flush(),
             Interface::File(ref mut x) => x.flush(),

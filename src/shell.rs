@@ -2,7 +2,9 @@
 
 use busybox;
 use clap;
+#[cfg(feature="readline")]
 use rustyline;
+#[cfg(feature="readline")]
 use rustyline::completion::Completer;
 
 use Error;
@@ -75,11 +77,13 @@ impl CmdCompleter {
     }
 
     #[inline]
+    #[cfg(feature="readline")]
     fn commands(&self) -> Vec<String> {
         self.0.lock().unwrap().keys()
     }
 }
 
+#[cfg(feature="readline")]
 impl Completer for CmdCompleter {
     #[inline]
     fn complete(&self, line: &str, pos: usize) -> rustyline::Result<(usize, Vec<String>)> {
@@ -356,7 +360,7 @@ impl Shell {
     pub fn new(toolbox: Toolbox) -> Shell {
         let toolbox = Arc::new(Mutex::new(toolbox));
 
-        let ui = Interface::fancy(toolbox.clone());
+        let ui = Interface::default(&toolbox);
 
         Shell {
             ui,
@@ -377,6 +381,7 @@ impl Shell {
     #[inline]
     pub fn downgrade(&mut self) {
         match self.ui {
+            #[cfg(feature="readline")]
             Interface::Fancy(_) => {
                 self.ui = Interface::stdio();
             },
@@ -449,7 +454,7 @@ impl Shell {
 
     fn daemon_clone(&self) -> Shell {
         let toolbox = self.toolbox.clone();
-        let ui = Interface::fancy(toolbox.clone());
+        let ui = Interface::default(&toolbox);
         Shell {
             ui,
             toolbox,
@@ -467,6 +472,7 @@ impl Shell {
 
         match readline {
             Ok(line) => {
+                #[cfg(feature="readline")]
                 self.ui.add_history_entry(line.as_ref());
                 Ok(parse_line(&line))
             },

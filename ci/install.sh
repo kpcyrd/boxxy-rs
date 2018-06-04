@@ -1,11 +1,10 @@
 #!/bin/sh
 set -ex
 
-apt-get -qq update
-
 case "$1" in
     i686-pc-windows-gnu)
-        apt-get install mingw-w64
+        apt-get -qq update
+        apt-get install -qy mingw-w64
 
         # setup compiler
         cat >> ~/.cargo/config <<__END__
@@ -16,6 +15,7 @@ rustflags = "-C panic=abort"
 __END__
         ;;
     i686-unknown-linux-gnu)
+        apt-get -qq update
         apt-get install -qy gcc-multilib
         ;;
     *)
