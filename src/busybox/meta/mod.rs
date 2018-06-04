@@ -1,8 +1,5 @@
-mod downgrade;
-pub use self::downgrade::downgrade;
+import_cmd!(downgrade);
 
-mod echo;
-pub use self::echo::echo;
+import_cmd!(echo);
 
-mod help;
-pub use self::help::help;
+import_cmd!(help);

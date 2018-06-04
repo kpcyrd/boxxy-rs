@@ -1,45 +1,28 @@
-mod cat;
-pub use self::cat::cat;
+import_cmd!(cat);
 
-mod cd;
-pub use self::cd::cd;
+import_cmd!(cd);
 
 #[cfg(unix)]
-mod chmod;
-#[cfg(unix)]
-pub use self::chmod::chmod;
+import_cmd!(chmod);
 
 #[cfg(unix)]
-mod chown;
-#[cfg(unix)]
-pub use self::chown::chown;
+import_cmd!(chown);
 
 #[cfg(unix)]
-mod chroot;
-#[cfg(unix)]
-pub use self::chroot::chroot;
+import_cmd!(chroot);
 
-mod grep;
-pub use self::grep::grep;
+import_cmd!(grep);
 
 #[cfg(feature="archives")]
-mod tar;
-#[cfg(feature="archives")]
-pub use self::tar::tar;
+import_cmd!(tar);
 
-mod ls;
-pub use self::ls::ls;
+import_cmd!(ls);
 
-mod mkdir;
-pub use self::mkdir::mkdir;
+import_cmd!(mkdir);
 
 #[cfg(target_os="linux")]
-mod mount;
-#[cfg(target_os="linux")]
-pub use self::mount::mount;
+import_cmd!(mount);
 
-mod pwd;
-pub use self::pwd::pwd;
+import_cmd!(pwd);
 
-mod rm;
-pub use self::rm::rm;
+import_cmd!(rm);

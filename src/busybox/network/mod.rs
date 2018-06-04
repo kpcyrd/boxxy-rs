@@ -1,10 +1,6 @@
-mod curl;
-pub use self::curl::curl;
+import_cmd!(curl);
 
-mod revshell;
-pub use self::revshell::revshell;
+import_cmd!(revshell);
 
 #[cfg(unix)]
-mod ipcshell;
-#[cfg(unix)]
-pub use self::ipcshell::ipcshell;
+import_cmd!(ipcshell);

@@ -1,44 +1,26 @@
 #[cfg(unix)]
-mod id;
-#[cfg(unix)]
-pub use self::id::id;
+import_cmd!(id);
 
 #[cfg(unix)]
-mod setuid;
-#[cfg(unix)]
-pub use self::setuid::setuid;
+import_cmd!(setuid);
 
 #[cfg(unix)]
-mod seteuid;
-#[cfg(unix)]
-pub use self::seteuid::seteuid;
+import_cmd!(seteuid);
 
 #[cfg(target_os="linux")]
-mod setreuid;
-#[cfg(target_os="linux")]
-pub use self::setreuid::setreuid;
+import_cmd!(setreuid);
 
 #[cfg(target_os="linux")]
-mod setresuid;
-#[cfg(target_os="linux")]
-pub use self::setresuid::setresuid;
+import_cmd!(setresuid);
 
 #[cfg(unix)]
-mod setgid;
-#[cfg(unix)]
-pub use self::setgid::setgid;
+import_cmd!(setgid);
 
 #[cfg(target_os="linux")]
-mod setresgid;
-#[cfg(target_os="linux")]
-pub use self::setresgid::setresgid;
+import_cmd!(setresgid);
 
 #[cfg(unix)]
-mod setgroups;
-#[cfg(unix)]
-pub use self::setgroups::setgroups;
+import_cmd!(setgroups);
 
 #[cfg(target_os="linux")]
-mod caps;
-#[cfg(target_os="linux")]
-pub use self::caps::caps;
+import_cmd!(caps);
