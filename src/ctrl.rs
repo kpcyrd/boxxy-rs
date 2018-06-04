@@ -1,6 +1,6 @@
 use Toolbox;
 #[cfg(feature="readline")]
-use shell::CmdCompleter;
+use completer::CmdCompleter;
 #[cfg(feature="network")]
 use crypto::OwnedTlsStream;
 #[cfg(feature="readline")]
