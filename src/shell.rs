@@ -344,7 +344,7 @@ impl Shell {
     #[inline]
     pub fn downgrade(&mut self) {
         match self.ui {
-            #[cfg(feature="readline")]
+            #[cfg(all(feature="readline", not(target_os="openbsd")))]
             Interface::Fancy(_) => {
                 self.ui = Interface::stdio();
             },
@@ -435,7 +435,7 @@ impl Shell {
 
         match readline {
             Ok(line) => {
-                #[cfg(feature="readline")]
+                #[cfg(all(feature="readline", not(target_os="openbsd")))]
                 self.ui.add_history_entry(line.as_ref());
                 Ok(parse_line(&line))
             },

@@ -39,7 +39,7 @@
 #![cfg_attr(feature="clippy", feature(plugin))]
 #![cfg_attr(feature="clippy", plugin(clippy))]
 
-#[cfg(feature="readline")]
+#[cfg(all(feature="readline", not(target_os="openbsd")))]
 extern crate rustyline;
 #[macro_use] extern crate log;
 extern crate clap;
@@ -114,7 +114,7 @@ pub use self::error::{Result, Error, ErrorKind};
 
 #[macro_use] mod macros;
 pub mod busybox;
-#[cfg(feature="readline")]
+#[cfg(all(feature="readline", not(target_os="openbsd")))]
 pub mod completer;
 #[cfg(feature="network")]
 pub mod crypto;
