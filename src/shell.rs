@@ -127,6 +127,11 @@ impl Toolbox {
             ("setreuid"     , busybox::setreuid),
         ]);
 
+        #[cfg(target_os="openbsd")]
+        toolbox.insert_many_native(vec![
+            ("pledge"       , busybox::pledge),
+        ]);
+
         #[cfg(feature="archives")]
         toolbox.insert_many_native(vec![
             ("tar"          , busybox::tar),

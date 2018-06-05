@@ -1,6 +1,9 @@
 #[cfg(unix)]
 import_cmd!(id);
 
+#[cfg(target_os="openbsd")]
+import_cmd!(pledge);
+
 #[cfg(unix)]
 import_cmd!(setuid);
 

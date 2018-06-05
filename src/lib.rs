@@ -56,6 +56,9 @@ extern crate bufstream;
 #[cfg(target_os="linux")]
 extern crate caps;
 
+#[cfg(target_os="openbsd")]
+extern crate pledge;
+
 #[cfg(feature="archives")]
 extern crate tar;
 #[cfg(feature="archives")]
@@ -90,6 +93,9 @@ mod error {
     #[cfg(target_os="linux")]
     use caps;
 
+    #[cfg(target_os="openbsd")]
+    use pledge;
+
     error_chain! {
         errors {
             Errno(errno: errno::Errno) {
@@ -107,6 +113,7 @@ mod error {
             Uri(hyper::error::UriError) #[cfg(feature="network")];
             Http(hyper::Error) #[cfg(feature="network")];
             Caps(caps::errors::Error) #[cfg(target_os="linux")];
+            Pledge(pledge::Error) #[cfg(target_os="openbsd")];
         }
     }
 }
