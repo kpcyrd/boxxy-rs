@@ -7,12 +7,20 @@ pub fn pledge(_sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("pledge")
         .setting(AppSettings::DisableVersion)
         .arg(Arg::with_name("promises")
-            .required(true)
+            .multiple(true)
         )
         .get_matches_from_safe(args)?;
 
-    let promises = matches.value_of("promises").unwrap();
-    pledge_rs(promises)?;
+    let promises = match matches.values_of("promises") {
+        Some(promises) => promises.collect(),
+        None => Vec::new(),
+    };
+
+    let mut promises = promises.iter()
+                               .fold(String::new(), |a, b| a + &b + " ");
+    promises.pop();
+
+    pledge_rs(&promises)?;
 
     Ok(())
 }
