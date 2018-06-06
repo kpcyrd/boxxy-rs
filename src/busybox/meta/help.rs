@@ -1,7 +1,10 @@
 use ::{Result, Shell, Arguments};
 
 pub fn help(sh: &mut Shell, _args: Arguments) -> Result<()> {
-    for cmd in sh.list_commands() {
+    let mut commands = sh.list_commands();
+    commands.sort_unstable();
+
+    for cmd in commands {
         shprintln!(sh, "{:?}", cmd);
     }
 

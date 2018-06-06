@@ -39,7 +39,7 @@
 #![cfg_attr(feature="clippy", feature(plugin))]
 #![cfg_attr(feature="clippy", plugin(clippy))]
 
-#[cfg(feature="readline")]
+#[cfg(all(feature="readline", not(target_os="openbsd")))]
 extern crate rustyline;
 #[macro_use] extern crate log;
 extern crate clap;
@@ -55,6 +55,9 @@ extern crate bufstream;
 
 #[cfg(target_os="linux")]
 extern crate caps;
+
+#[cfg(target_os="openbsd")]
+extern crate pledge;
 
 #[cfg(feature="archives")]
 extern crate tar;
@@ -90,6 +93,9 @@ mod error {
     #[cfg(target_os="linux")]
     use caps;
 
+    #[cfg(target_os="openbsd")]
+    use pledge;
+
     error_chain! {
         errors {
             Errno(errno: errno::Errno) {
@@ -107,6 +113,7 @@ mod error {
             Uri(hyper::error::UriError) #[cfg(feature="network")];
             Http(hyper::Error) #[cfg(feature="network")];
             Caps(caps::errors::Error) #[cfg(target_os="linux")];
+            Pledge(pledge::Error) #[cfg(target_os="openbsd")];
         }
     }
 }
@@ -114,6 +121,8 @@ pub use self::error::{Result, Error, ErrorKind};
 
 #[macro_use] mod macros;
 pub mod busybox;
+#[cfg(all(feature="readline", not(target_os="openbsd")))]
+pub mod completer;
 #[cfg(feature="network")]
 pub mod crypto;
 pub mod ctrl;
