@@ -74,6 +74,10 @@ extern crate crypto as rust_crypto;
 #[cfg(feature="network")]
 extern crate hyper;
 #[cfg(feature="network")]
+extern crate http;
+#[cfg(feature="network")]
+extern crate url;
+#[cfg(feature="network")]
 extern crate hyper_rustls;
 #[cfg(feature="network")]
 extern crate tokio_core;
@@ -89,6 +93,9 @@ mod error {
 
     #[cfg(feature="network")]
     use hyper;
+
+    #[cfg(feature="network")]
+    use http;
 
     #[cfg(target_os="linux")]
     use caps;
@@ -110,7 +117,7 @@ mod error {
             InvalidRegex(regex::Error);
             AddrParseError(std::net::AddrParseError);
             Base64Decode(base64::DecodeError);
-            Uri(hyper::error::UriError) #[cfg(feature="network")];
+            Uri(http::uri::InvalidUri) #[cfg(feature="network")];
             Http(hyper::Error) #[cfg(feature="network")];
             Caps(caps::errors::Error) #[cfg(target_os="linux")];
             Pledge(pledge::Error) #[cfg(target_os="openbsd")];

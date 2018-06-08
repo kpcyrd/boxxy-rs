@@ -20,7 +20,7 @@ members = ["autoboxxy", "lambdash"]
 [features]
 default = ["readline", "network", "archives"]
 readline = ["rustyline"]
-network = ["hyper", "hyper-rustls", "tokio-core", "futures",
+network = ["hyper", "hyper-rustls", "http", "url", "tokio-core", "futures",
            "rustls", "rust-crypto", "webpki"]
 archives = ["tar", "libflate"]
 
@@ -47,8 +47,10 @@ rust-crypto = { version = "0.2", optional = true }
 webpki = { version = "0.18.0-alpha", optional = true }
 
 # network: curl
-hyper = { version = "0.11", optional = true }
-hyper-rustls = { version = "0.12", optional = true }
+hyper = { version = "0.12", optional = true }
+hyper-rustls = { version = "0.13", optional = true }
+http = { version = "0.1", optional = true }
+url = { version = "1.7", optional = true }
 tokio-core = { version = "0.1", optional = true }
 futures = { version = "0.1", optional = true }
 
