@@ -1,7 +1,9 @@
 use clap::{App, Arg, AppSettings};
 
 use hyper;
+use hyper::client::Client;
 use hyper_rustls::HttpsConnector;
+use url::Url;
 
 use tokio_core::reactor;
 use futures;
@@ -55,9 +57,8 @@ pub fn curl(sh: &mut Shell, args: Arguments) -> Result<()> {
     }
 
     let mut core = reactor::Core::new().unwrap();
-    let client = hyper::Client::configure()
-        .connector(HttpsConnector::new(4, &core.handle()))
-        .build(&core.handle());
+    let https = HttpsConnector::new(4);
+    let client: Client<_, hyper::Body> = Client::builder().build(https);
 
     #[allow(unused_assignments)]
     let (mut res, mut location) = (None, Some(url));
@@ -65,15 +66,19 @@ pub fn curl(sh: &mut Shell, args: Arguments) -> Result<()> {
     let mut max_redirects = 12;
 
     loop {
-        let url = location.unwrap();
+        let original_url = location.unwrap();
+        let url = original_url.clone();
+
         if verbose {
             shprintln!(sh, "requesting: {:?}", url);
         }
 
         let (inner_res, inner_location) = core.run(client.get(url).and_then(|res| {
             if verbose {
-                for header in res.headers().iter() {
-                    shprintln!(sh, "  {:?}; {:?}", header.name(), header.raw());
+                shprintln!(sh, "{:?} {:?}", res.version(), res.status());
+
+                for (key, value) in res.headers().iter() {
+                    shprintln!(sh, "  {:?}; {:?}", key, value);
                 }
 
                 if output.is_none() {
@@ -83,17 +88,19 @@ pub fn curl(sh: &mut Shell, args: Arguments) -> Result<()> {
 
             let mut next_location = None;
             if follow_location && res.status().is_redirection() {
-                use hyper::header::Location;
+                use http::header::LOCATION;
 
-                if let Some(location) = res.headers().get::<Location>() {
+                if let Some(location) = res.headers().get(LOCATION) {
                     if verbose {
                         shprintln!(sh, "follow: {:?}", location);
                     }
-                    next_location = Some(String::from(&location[..]).parse().unwrap());
+
+                    // TODO: proper error handling
+                    next_location = Some(resolve_redirect(&original_url, location.to_str().unwrap()).unwrap());
                 }
             }
 
-            (res.body().concat2(), futures::future::ok(next_location))
+            (res.into_body().concat2(), futures::future::ok(next_location))
         }))?;
 
         res = Some(inner_res);
@@ -134,6 +141,15 @@ pub fn curl(sh: &mut Shell, args: Arguments) -> Result<()> {
     Ok(())
 }
 
+// TODO: proper error handling
+fn resolve_redirect(current: &hyper::Uri, redirect: &str) -> Result<hyper::Uri> {
+    let current = Url::parse(&current.to_string()).unwrap();
+    let new_location = current.join(redirect).unwrap();
+
+    let next = new_location.as_str().parse()?;
+    Ok(next)
+}
+
 fn filename_from_uri(uri: &hyper::Uri) -> String {
     let path = uri.path();
 
@@ -168,5 +184,13 @@ mod tests {
         assert_eq!(filename_from_uri(&"https://example.com/asdf/foo.txz".parse().unwrap()), "foo.txz");
         assert_eq!(filename_from_uri(&"https://example.com/foo.txz?a=1".parse().unwrap()), "foo.txz");
         assert_eq!(filename_from_uri(&"https://example.com/foo.txz?a=1#x".parse().unwrap()), "foo.txz");
+    }
+
+    #[test]
+    fn test_relative_redirect() {
+        assert_eq!(resolve_redirect(&"https://httpbin.org/x/y".parse().unwrap(), "/anything").unwrap(),
+                        "https://httpbin.org/anything");
+        assert_eq!(resolve_redirect(&"https://example.com/x/y".parse().unwrap(), "https://httpbin.org/anything").unwrap(),
+                        "https://httpbin.org/anything");
     }
 }
