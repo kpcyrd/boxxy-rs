@@ -26,7 +26,7 @@ Just put a dev-dependencies in your Cargo.toml and copy `examples/boxxy.rs` to
 your `examples/` folder. Modify to include your sandbox.
 
     [dev-dependencies]
-    boxxy = "*"
+    boxxy = "0.*"
 
 ## Linking with C
 
