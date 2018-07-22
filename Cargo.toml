@@ -18,7 +18,8 @@ travis-ci = { repository = "kpcyrd/boxxy-rs" }
 members = ["autoboxxy", "lambdash"]
 
 [features]
-default = ["readline", "network", "archives"]
+default = ["readline", "network"]
+full = ["readline", "network", "archives"]
 readline = ["rustyline"]
 network = ["hyper", "hyper-rustls", "http", "url", "tokio-core", "futures",
            "rustls", "rust-crypto", "webpki"]
@@ -32,23 +33,22 @@ errno = "0.2"
 regex = "1.0"
 nix = "0.11"
 base64 = "0.9"
-error-chain = "0.11"
+error-chain = "0.12"
 bufstream = "0.1"
 cfg-if = "0.1"
-clippy = { version = "0.0.199", optional = true }
 
 # disk: tar
 tar = { version = "0.4", optional = true }
 libflate = { version = "0.1.14", optional = true }
 
 # network: revshell
-rustls = { version = "0.12", features = ["dangerous_configuration"], optional = true }
+rustls = { version = "0.13", features = ["dangerous_configuration"], optional = true }
 rust-crypto = { version = "0.2", optional = true }
 webpki = { version = "0.18.0-alpha", optional = true }
 
 # network: curl
 hyper = { version = "0.12", optional = true }
-hyper-rustls = { version = "0.13", optional = true }
+hyper-rustls = { version = "0.14", optional = true }
 http = { version = "0.1", optional = true }
 url = { version = "1.7", optional = true }
 tokio-core = { version = "0.1", optional = true }
