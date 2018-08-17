@@ -27,3 +27,6 @@ import_cmd!(setgroups);
 
 #[cfg(target_os="linux")]
 import_cmd!(caps);
+
+#[cfg(target_os="linux")]
+import_cmd!(keepcaps);

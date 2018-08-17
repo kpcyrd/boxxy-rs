@@ -122,6 +122,7 @@ impl Toolbox {
         toolbox.insert_many_native(vec![
             ("caps"         , busybox::caps),
             ("mount"        , busybox::mount),
+            ("keepcaps"     , busybox::keepcaps),
             ("setresgid"    , busybox::setresgid),
             ("setresuid"    , busybox::setresuid),
             ("setreuid"     , busybox::setreuid),
