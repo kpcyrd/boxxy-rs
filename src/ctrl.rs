@@ -118,7 +118,7 @@ impl Interface {
     pub fn fancy(toolbox: Arc<Mutex<Toolbox>>) -> Interface {
         let mut rl = Editor::new();
         let c = CmdCompleter::new(toolbox);
-        rl.set_completer(Some(c));
+        rl.set_helper(Some(c));
 
         Interface::Fancy((io::stdin(), io::stdout(), rl))
     }

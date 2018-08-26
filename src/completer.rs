@@ -1,7 +1,10 @@
 use rustyline;
 use rustyline::completion::Completer;
+use rustyline::highlight::Highlighter;
+use rustyline::hint::Hinter;
 
 use shell::Toolbox;
+use std::borrow::Cow::{self, Borrowed};
 use std::sync::{Arc, Mutex};
 
 
@@ -20,6 +23,8 @@ impl CmdCompleter {
 }
 
 impl Completer for CmdCompleter {
+    type Candidate = String;
+
     #[inline]
     fn complete(&self, line: &str, pos: usize) -> rustyline::Result<(usize, Vec<String>)> {
         if line.contains(' ') || line.len() != pos {
@@ -34,3 +39,24 @@ impl Completer for CmdCompleter {
         Ok((0, results))
     }
 }
+
+impl Hinter for CmdCompleter {
+    #[inline]
+    fn hint(&self, _line: &str, _pos: usize) -> Option<String> {
+        None
+    }
+}
+
+impl Highlighter for CmdCompleter {
+    #[inline]
+    fn highlight_prompt<'p>(&self, prompt: &'p str) -> Cow<'p, str> {
+        Borrowed(prompt)
+    }
+
+    #[inline]
+    fn highlight_hint<'h>(&self, hint: &'h str) -> Cow<'h, str> {
+        Borrowed(hint)
+    }
+}
+
+impl rustyline::Helper for CmdCompleter {}
