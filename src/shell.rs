@@ -110,6 +110,8 @@ impl Toolbox {
             ("chmod"        , busybox::chmod),
             ("chown"        , busybox::chown),
             ("chroot"       , busybox::chroot),
+            ("fchdir"       , busybox::fchdir),
+            ("fds"          , busybox::fds),
             ("jit"          , busybox::jit),
             ("id"           , busybox::id),
             ("setgroups"    , busybox::setgroups),
