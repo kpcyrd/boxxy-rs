@@ -11,6 +11,12 @@ import_cmd!(chown);
 #[cfg(unix)]
 import_cmd!(chroot);
 
+#[cfg(unix)]
+import_cmd!(fchdir);
+
+#[cfg(unix)]
+import_cmd!(fds);
+
 import_cmd!(grep);
 
 #[cfg(feature="archives")]
