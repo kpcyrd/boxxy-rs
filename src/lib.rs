@@ -69,7 +69,7 @@ extern crate rustls;
 #[cfg(feature="network")]
 extern crate webpki;
 #[cfg(feature="network")]
-extern crate crypto as rust_crypto;
+extern crate sha2;
 
 #[cfg(feature="network")]
 extern crate hyper;

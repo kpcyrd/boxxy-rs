@@ -8,12 +8,10 @@ use std::net::TcpStream;
 
 pub mod danger {
     use rustls;
-    use rust_crypto::sha2::Sha256;
-    use rust_crypto::digest::Digest;
+    use sha2::{Sha256, Digest};
     use base64;
     use webpki;
 
-    use std::iter::repeat;
     use error::Error;
 
     pub struct PinnedCertificateVerification {}
@@ -32,10 +30,7 @@ pub mod danger {
             "SHA256" => {
                 let mut h = Sha256::new();
                 h.input(&cert.0);
-
-                let mut buf: Vec<u8> = repeat(0).take((h.output_bits()+7)/8).collect();
-                h.result(&mut buf);
-                buf
+                h.result().to_vec()
             },
             _ => bail!("unknown hash alog"),
         };

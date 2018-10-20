@@ -22,7 +22,7 @@ default = ["readline", "network"]
 full = ["readline", "network", "archives"]
 readline = ["rustyline"]
 network = ["hyper", "hyper-rustls", "http", "url", "tokio-core", "futures",
-           "rustls", "rust-crypto", "webpki"]
+           "rustls", "sha2", "webpki"]
 archives = ["tar", "libflate"]
 
 [dependencies]
@@ -43,7 +43,7 @@ libflate = { version = "0.1.14", optional = true }
 
 # network: revshell
 rustls = { version = "0.13", features = ["dangerous_configuration"], optional = true }
-rust-crypto = { version = "0.2", optional = true }
+sha2 = { version = "0.8", optional = true }
 webpki = { version = "0.18.0-alpha", optional = true }
 
 # network: curl
