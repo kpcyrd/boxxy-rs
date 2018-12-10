@@ -153,6 +153,8 @@ pub fn tar(sh: &mut Shell, args: Arguments) -> Result<()> {
 
         let file = compression.open(archive)?;
         let mut ar = tar::Archive::new(file);
+        ar.set_preserve_permissions(true);
+        ar.set_unpack_xattrs(true);
         ar.unpack(dest)?;
     } else if create {
         if paths.is_empty() {
