@@ -1,4 +1,4 @@
-use rustyline;
+use rustyline::{self, Context};
 use rustyline::completion::Completer;
 use rustyline::highlight::Highlighter;
 use rustyline::hint::Hinter;
@@ -26,7 +26,7 @@ impl Completer for CmdCompleter {
     type Candidate = String;
 
     #[inline]
-    fn complete(&self, line: &str, pos: usize) -> rustyline::Result<(usize, Vec<String>)> {
+    fn complete(&self, line: &str, pos: usize, _ctx: &Context<'_>) -> rustyline::Result<(usize, Vec<String>)> {
         if line.contains(' ') || line.len() != pos {
             return Ok((0, vec![]));
         }
@@ -42,7 +42,7 @@ impl Completer for CmdCompleter {
 
 impl Hinter for CmdCompleter {
     #[inline]
-    fn hint(&self, _line: &str, _pos: usize) -> Option<String> {
+    fn hint(&self, _line: &str, _pos: usize, _ctx: &Context<'_>) -> Option<String> {
         None
     }
 }

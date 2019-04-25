@@ -36,10 +36,8 @@
 //! ```
 
 #![warn(unused_extern_crates)]
-#![cfg_attr(feature="clippy", feature(plugin))]
-#![cfg_attr(feature="clippy", plugin(clippy))]
 
-#[cfg(all(feature="readline", not(target_os="openbsd")))]
+#[cfg(feature="readline")]
 extern crate rustyline;
 #[macro_use] extern crate log;
 extern crate clap;
