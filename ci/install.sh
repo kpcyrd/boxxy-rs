@@ -3,8 +3,8 @@ set -ex
 
 case "$1" in
     i686-pc-windows-gnu)
-        apt-get -qq update
-        apt-get install -qy mingw-w64
+        sudo apt-get -qq update
+        sudo apt-get install -qy mingw-w64
 
         # setup compiler
         cat >> ~/.cargo/config <<__END__
@@ -15,8 +15,8 @@ rustflags = "-C panic=abort"
 __END__
         ;;
     i686-unknown-linux-gnu)
-        apt-get -qq update
-        apt-get install -qy gcc-multilib
+        sudo apt-get -qq update
+        sudo apt-get install -qy gcc-multilib
         ;;
     *)
         # nop
