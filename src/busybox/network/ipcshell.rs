@@ -1,8 +1,8 @@
 use clap::{App, Arg, AppSettings};
 use bufstream::BufStream;
 
-use ::{Result, Shell, Arguments};
-use ctrl::Interface;
+use crate::{Result, Shell, Arguments};
+use crate::ctrl::Interface;
 
 use std::os::unix::net::UnixStream;
 

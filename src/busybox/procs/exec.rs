@@ -2,7 +2,7 @@ use clap::{App, Arg, AppSettings};
 #[cfg(unix)]
 use libc;
 
-use ::{Result, Shell, Arguments};
+use crate::{Result, Shell, Arguments};
 
 use std::process::Command;
 #[cfg(unix)]

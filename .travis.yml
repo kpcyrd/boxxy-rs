@@ -17,9 +17,12 @@ matrix:
   - os: osx
     rust: stable
     env: TARGET=x86_64-apple-darwin
+  - os: windows
+    rust: stable
+    env: TARGET=x86_64-pc-windows-msvc
 
 before_install:
-- sudo ci/install.sh "$TARGET"
+- ci/install.sh "$TARGET"
 install:
 - rustup install "$TRAVIS_RUST_VERSION-$TARGET"
 - rustup target add "$TARGET" || true

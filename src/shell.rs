@@ -1,12 +1,12 @@
 //! The interactive shell.
 
-use busybox;
+use crate::busybox;
 use clap;
 
-use Error;
-use ErrorKind;
-use ctrl::{Interface, PromptError};
-pub use ffi::ForeignCommand;
+use crate::Error;
+use crate::ErrorKind;
+use crate::ctrl::{Interface, PromptError};
+pub use crate::ffi::ForeignCommand;
 use std::io;
 use std::io::prelude::*;
 use std::sync::Arc;
@@ -17,7 +17,7 @@ use std::collections::HashMap;
 use std::os::unix::io::RawFd;
 
 #[cfg(unix)]
-use ffi::daemonize;
+use crate::ffi::daemonize;
 
 
 #[derive(Clone)]
@@ -352,7 +352,7 @@ impl Shell {
     #[inline]
     pub fn downgrade(&mut self) {
         match self.ui {
-            #[cfg(all(feature="readline", not(target_os="openbsd")))]
+            #[cfg(feature="readline")]
             Interface::Fancy(_) => {
                 self.ui = Interface::stdio();
             },
@@ -443,7 +443,7 @@ impl Shell {
 
         match readline {
             Ok(line) => {
-                #[cfg(all(feature="readline", not(target_os="openbsd")))]
+                #[cfg(feature="readline")]
                 self.ui.add_history_entry(line.as_ref());
                 Ok(parse_line(&line))
             },

@@ -1,7 +1,7 @@
 use clap::{App, Arg, AppSettings, ArgGroup};
 use caps::{self, Capability, CapSet};
 
-use ::{Result, Shell, Arguments};
+use crate::{Result, Shell, Arguments};
 
 use std::result;
 use std::str::FromStr;

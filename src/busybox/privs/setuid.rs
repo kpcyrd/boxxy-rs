@@ -1,7 +1,7 @@
 use clap::{App, Arg, AppSettings};
 
-use ::{Result, Shell, Arguments};
-use ffi;
+use crate::{Result, Shell, Arguments};
+use crate::ffi;
 
 
 pub fn setuid(_sh: &mut Shell, args: Arguments) -> Result<()> {

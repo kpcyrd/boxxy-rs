@@ -1,7 +1,7 @@
 use libc::{self, gid_t};
 use errno::errno;
 
-use ::{Result, ErrorKind};
+use crate::{Result, ErrorKind};
 
 /// Set the supplemental groups.
 ///

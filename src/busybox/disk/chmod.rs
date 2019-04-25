@@ -2,7 +2,7 @@ use clap::{App, Arg, AppSettings};
 use libc::{self, mode_t};
 use errno::errno;
 
-use ::{Result, Shell, Arguments};
+use crate::{Result, Shell, Arguments};
 
 use std::ffi::CString;
 

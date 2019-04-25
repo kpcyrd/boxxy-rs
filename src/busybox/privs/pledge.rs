@@ -1,7 +1,7 @@
 use clap::{App, Arg, AppSettings};
 use pledge::pledge as pledge_rs;
 
-use ::{Result, Shell, Arguments};
+use crate::{Result, Shell, Arguments};
 
 pub fn pledge(_sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("pledge")

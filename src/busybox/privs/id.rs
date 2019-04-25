@@ -1,5 +1,5 @@
-use ::{Result, Shell, Arguments};
-use ffi;
+use crate::{Result, Shell, Arguments};
+use crate::ffi;
 
 
 cfg_if! {
