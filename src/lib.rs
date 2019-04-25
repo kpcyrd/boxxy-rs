@@ -85,7 +85,7 @@ pub use self::error::{Result, Error, ErrorKind};
 
 #[macro_use] mod macros;
 pub mod busybox;
-#[cfg(all(feature="readline", not(target_os="openbsd")))]
+#[cfg(feature="readline")]
 pub mod completer;
 #[cfg(feature="network")]
 pub mod crypto;
