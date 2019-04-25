@@ -3,7 +3,7 @@ use rustyline::completion::Completer;
 use rustyline::highlight::Highlighter;
 use rustyline::hint::Hinter;
 
-use shell::Toolbox;
+use crate::shell::Toolbox;
 use std::borrow::Cow::{self, Borrowed};
 use std::sync::{Arc, Mutex};
 

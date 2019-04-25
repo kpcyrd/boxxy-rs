@@ -1,8 +1,8 @@
-use Toolbox;
+use crate::Toolbox;
 #[cfg(feature="readline")]
-use completer::CmdCompleter;
+use crate::completer::CmdCompleter;
 #[cfg(feature="network")]
-use crypto::OwnedTlsStream;
+use crate::crypto::OwnedTlsStream;
 #[cfg(feature="readline")]
 use rustyline::{self, Editor};
 

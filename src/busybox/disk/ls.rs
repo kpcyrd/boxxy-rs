@@ -1,6 +1,6 @@
 use clap::{App, Arg, AppSettings};
 
-use ::{Result, Shell, Arguments};
+use crate::{Result, Shell, Arguments};
 
 use std::fs::{self, DirEntry};
 use std::time::SystemTime;

@@ -2,7 +2,7 @@ use clap::{App, Arg, AppSettings};
 use base64;
 use libc;
 
-use ::{Result, Shell, Arguments};
+use crate::{Result, Shell, Arguments};
 
 use std::mem;
 

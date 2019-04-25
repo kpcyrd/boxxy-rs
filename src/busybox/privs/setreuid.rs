@@ -2,7 +2,7 @@ use clap::{App, Arg, AppSettings};
 use libc;
 use errno::errno;
 
-use ::{Result, Shell, ErrorKind, Arguments};
+use crate::{Result, Shell, ErrorKind, Arguments};
 
 
 pub fn setreuid(_sh: &mut Shell, args: Arguments) -> Result<()> {

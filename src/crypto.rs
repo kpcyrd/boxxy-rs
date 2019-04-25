@@ -12,7 +12,7 @@ pub mod danger {
     use base64;
     use webpki;
 
-    use error::Error;
+    use crate::error::Error;
 
     pub struct PinnedCertificateVerification {}
 

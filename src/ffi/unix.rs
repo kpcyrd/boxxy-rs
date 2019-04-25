@@ -1,8 +1,8 @@
 use libc::{self, uid_t, gid_t};
 use errno::errno;
-use shell;
+use crate::shell;
 
-use ::{Result, ErrorKind};
+use crate::{Result, ErrorKind};
 
 
 pub fn getuid() -> Result<uid_t> {

@@ -1,7 +1,7 @@
 use clap::{App, Arg, AppSettings};
 
-use ::{Result, Shell, Arguments};
-use error::ResultExt;
+use crate::{Result, Shell, Arguments};
+use crate::error::ResultExt;
 
 use nix;
 

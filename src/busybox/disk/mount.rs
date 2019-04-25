@@ -1,7 +1,7 @@
 use clap::{App, Arg, AppSettings};
 use nix;
 
-use ::{Result, Shell, Arguments};
+use crate::{Result, Shell, Arguments};
 
 
 pub fn mount(sh: &mut Shell, args: Arguments) -> Result<()> {

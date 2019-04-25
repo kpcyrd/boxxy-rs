@@ -1,7 +1,7 @@
 use libc;
 
-use ::{Shell, Toolbox};
-use ffi::ForeignCommand;
+use crate::{Shell, Toolbox};
+use crate::ffi::ForeignCommand;
 use std::ffi::CStr;
 
 

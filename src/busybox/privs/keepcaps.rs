@@ -1,7 +1,7 @@
 use clap::{App, SubCommand, AppSettings};
 use caps::securebits;
 
-use ::{Result, Shell, Arguments};
+use crate::{Result, Shell, Arguments};
 
 
 pub fn keepcaps(sh: &mut Shell, args: Arguments) -> Result<()> {

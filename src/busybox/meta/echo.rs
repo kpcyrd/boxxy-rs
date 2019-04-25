@@ -1,4 +1,4 @@
-use ::{Result, Shell, Arguments};
+use crate::{Result, Shell, Arguments};
 
 pub fn echo(sh: &mut Shell, args: Arguments) -> Result<()> {
     let msg = match args.len() {
@@ -22,8 +22,8 @@ pub fn echo(sh: &mut Shell, args: Arguments) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ctrl;
-    use Toolbox;
+    use crate::ctrl;
+    use crate::Toolbox;
 
     #[inline]
     fn str_args(args: Vec<&str>) -> Arguments {

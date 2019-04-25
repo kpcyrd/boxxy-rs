@@ -1,7 +1,7 @@
 use clap::{App, Arg, AppSettings};
 use regex::Regex;
 
-use ::{Result, Shell, Arguments};
+use crate::{Result, Shell, Arguments};
 
 use std::fs::File;
 use std::io::BufReader;

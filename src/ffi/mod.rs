@@ -1,5 +1,5 @@
 //! Abstractions of some unsafe functions.
-use Error;
+use crate::Error;
 use std::ptr;
 use std::ffi::CString;
 use std::os::raw::c_char;

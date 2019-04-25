@@ -3,9 +3,9 @@ use rustls::{ClientSession, ClientConfig};
 use webpki::DNSNameRef;
 use bufstream::BufStream;
 
-use ::{Result, Shell, Arguments};
-use ctrl::Interface;
-use crypto::{self, OwnedTlsStream};
+use crate::{Result, Shell, Arguments};
+use crate::ctrl::Interface;
+use crate::crypto::{self, OwnedTlsStream};
 
 use std::sync::Arc;
 use std::net::{TcpStream, SocketAddr};

@@ -37,50 +37,9 @@
 
 #![warn(unused_extern_crates)]
 
-#[cfg(feature="readline")]
-extern crate rustyline;
 #[macro_use] extern crate log;
-extern crate clap;
-extern crate libc;
-extern crate errno;
-extern crate regex;
-#[cfg(unix)]
-extern crate nix;
-extern crate base64;
-extern crate bufstream;
 #[macro_use] extern crate error_chain;
 #[macro_use] extern crate cfg_if;
-
-#[cfg(target_os="linux")]
-extern crate caps;
-
-#[cfg(target_os="openbsd")]
-extern crate pledge;
-
-#[cfg(feature="archives")]
-extern crate tar;
-#[cfg(feature="archives")]
-extern crate libflate;
-
-#[cfg(feature="network")]
-extern crate rustls;
-#[cfg(feature="network")]
-extern crate webpki;
-#[cfg(feature="network")]
-extern crate sha2;
-
-#[cfg(feature="network")]
-extern crate hyper;
-#[cfg(feature="network")]
-extern crate http;
-#[cfg(feature="network")]
-extern crate url;
-#[cfg(feature="network")]
-extern crate hyper_rustls;
-#[cfg(feature="network")]
-extern crate tokio_core;
-#[cfg(feature="network")]
-extern crate futures;
 
 mod error {
     use std;
@@ -134,9 +93,9 @@ pub mod ctrl;
 pub mod ffi;
 pub mod shell;
 
-pub use ctrl::Interface;
-pub use shell::{Shell, Toolbox};
-pub use shell::{Command, NativeCommand, ForeignCommand};
+pub use crate::ctrl::Interface;
+pub use crate::shell::{Shell, Toolbox};
+pub use crate::shell::{Command, NativeCommand, ForeignCommand};
 
 /// Arguments passed to builtin commands
 pub type Arguments = Vec<String>;

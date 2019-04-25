@@ -1,8 +1,8 @@
 use clap::{App, Arg, AppSettings};
 use libc::gid_t;
 
-use ::{Result, Shell, Arguments};
-use ffi;
+use crate::{Result, Shell, Arguments};
+use crate::ffi;
 
 use std::result;
 
