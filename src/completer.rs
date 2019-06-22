@@ -49,11 +49,6 @@ impl Hinter for CmdCompleter {
 
 impl Highlighter for CmdCompleter {
     #[inline]
-    fn highlight_prompt<'p>(&self, prompt: &'p str) -> Cow<'p, str> {
-        Borrowed(prompt)
-    }
-
-    #[inline]
     fn highlight_hint<'h>(&self, hint: &'h str) -> Cow<'h, str> {
         Borrowed(hint)
     }
