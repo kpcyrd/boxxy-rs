@@ -1,8 +1,9 @@
 use clap::{App, Arg, AppSettings, ArgGroup};
-use tar;
 use libflate::gzip;
 
-use ::{Result, Shell, Arguments};
+use crate::errors::*;
+use crate::shell::Shell;
+use crate::Arguments;
 
 use std::io;
 use std::path::Path;
