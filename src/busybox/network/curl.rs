@@ -1,16 +1,15 @@
 use clap::{App, Arg, AppSettings};
 use crate::{Shell, Arguments};
 use crate::errors::*;
-use futures::Stream;
-use futures::future::Future;
-use hyper::client::Client;
-use hyper_rustls::HttpsConnector;
-use std::fs::File;
+use reqwest::{ClientBuilder, Request, Method};
+use tokio::fs::File;
 use std::io::prelude::*;
-use tokio_core::reactor;
-use url::Url;
+use futures_util::StreamExt;
+use tokio::io::AsyncWriteExt;
 
-pub fn curl(sh: &mut Shell, args: Arguments) -> Result<()> {
+#[tokio::main(flavor="current_thread")]
+pub async fn curl(sh: &mut Shell, args: Arguments) -> Result<()> {
+
     let matches = App::new("curl")
         .setting(AppSettings::DisableVersion)
         .about("Poor mans curl")
@@ -50,101 +49,52 @@ pub fn curl(sh: &mut Shell, args: Arguments) -> Result<()> {
         output = Some(filename_from_uri(&url));
     }
 
-    let mut core = reactor::Core::new().unwrap();
-    let https = HttpsConnector::new(4);
-    let client: Client<_, hyper::Body> = Client::builder().build(https);
+    let builder = ClientBuilder::new()
+        .use_rustls_tls();
 
-    #[allow(unused_assignments)]
-    let (mut res, mut location) = (None, Some(url));
+    let builder = if follow_location {
+        builder.redirect(reqwest::redirect::Policy::limited(12))
+    } else {
+        builder
+    };
 
-    let mut max_redirects = 12;
+    let client = builder.build()?;
+    let req = Request::new(Method::GET, url);
+    let resp = client.execute(req).await?;
 
-    loop {
-        let original_url = location.unwrap();
-        let url = original_url.clone();
+    if verbose {
+        shprintln!(sh, "{:?} {:?}", resp.version(), resp.status());
 
-        if verbose {
-            shprintln!(sh, "requesting: {:?}", url);
+        for (key, value) in resp.headers().iter() {
+            shprintln!(sh, "  {:?}; {:?}", key, value);
         }
 
-        let (inner_res, inner_location) = core.run(client.get(url).and_then(|res| {
-            if verbose {
-                shprintln!(sh, "{:?} {:?}", res.version(), res.status());
-
-                for (key, value) in res.headers().iter() {
-                    shprintln!(sh, "  {:?}; {:?}", key, value);
-                }
-
-                if output.is_none() {
-                    shprintln!(sh, "");
-                }
-            }
-
-            let mut next_location = None;
-            if follow_location && res.status().is_redirection() {
-                use http::header::LOCATION;
-
-                if let Some(location) = res.headers().get(LOCATION) {
-                    if verbose {
-                        shprintln!(sh, "follow: {:?}", location);
-                    }
-
-                    // TODO: proper error handling
-                    next_location = Some(resolve_redirect(&original_url, location.to_str().unwrap()).unwrap());
-                }
-            }
-
-            (res.into_body().concat2(), futures::future::ok(next_location))
-        }))?;
-
-        res = Some(inner_res);
-        location = inner_location;
-
-        if location.is_none() {
-            break;
-        }
-
-        max_redirects -= 1;
-
-        if max_redirects <= 0 {
-            shprintln!(sh, "max redirects exceeded");
-            break;
+        if output.is_none() {
+            shprintln!(sh, "");
         }
     }
 
-    let res = res.unwrap();
-
-    match output {
-        Some(path) => {
-            let mut file = File::create(&path)?;
-            // TODO: don't buffer the full response
-            file.write_all(&res.to_vec())?;
-            shprintln!(sh, "downloaded to: {:?}", path);
-        },
-        None => {
-            // if printing to stdout
-            let res = match String::from_utf8(res.to_vec()) {
-                Ok(res) => format!("{:?}", res),
-                Err(_) => format!("{:?}", res.to_vec()),
-            };
-
-            shprintln!(sh, "{}", res);
-        }
+    let mut output: Option<File> = if let Some(path) = output {
+        Some(File::create(&path).await?)
+    } else {
+        None
     };
+
+    let mut stream = resp.bytes_stream();
+    while let Some(item) = stream.next().await {
+        let chunk = item?;
+
+        if let Some(file) = output.as_mut() {
+            file.write_all(&chunk).await?;
+        } else {
+            sh.write_all(&chunk)?;
+        }
+    }
 
     Ok(())
 }
 
-// TODO: proper error handling
-fn resolve_redirect(current: &hyper::Uri, redirect: &str) -> Result<hyper::Uri> {
-    let current = Url::parse(&current.to_string()).unwrap();
-    let new_location = current.join(redirect).unwrap();
-
-    let next = new_location.as_str().parse()?;
-    Ok(next)
-}
-
-fn filename_from_uri(uri: &hyper::Uri) -> String {
+fn filename_from_uri(uri: &reqwest::Url) -> String {
     let path = uri.path();
 
     if let Some(idx) = path.rfind('/') {
@@ -159,7 +109,6 @@ fn filename_from_uri(uri: &hyper::Uri) -> String {
         String::from("index.html")
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -178,13 +127,5 @@ mod tests {
         assert_eq!(filename_from_uri(&"https://example.com/asdf/foo.txz".parse().unwrap()), "foo.txz");
         assert_eq!(filename_from_uri(&"https://example.com/foo.txz?a=1".parse().unwrap()), "foo.txz");
         assert_eq!(filename_from_uri(&"https://example.com/foo.txz?a=1#x".parse().unwrap()), "foo.txz");
-    }
-
-    #[test]
-    fn test_relative_redirect() {
-        assert_eq!(resolve_redirect(&"https://httpbin.org/x/y".parse().unwrap(), "/anything").unwrap(),
-                        "https://httpbin.org/anything");
-        assert_eq!(resolve_redirect(&"https://example.com/x/y".parse().unwrap(), "https://httpbin.org/anything").unwrap(),
-                        "https://httpbin.org/anything");
     }
 }

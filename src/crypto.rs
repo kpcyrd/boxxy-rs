@@ -24,8 +24,8 @@ pub mod danger {
         let fingerprint = match algo {
             "SHA256" => {
                 let mut h = Sha256::new();
-                h.input(&cert.0);
-                h.result().to_vec()
+                h.update(&cert.0);
+                h.finalize().to_vec()
             },
             _ => bail!("unknown hash alog"),
         };

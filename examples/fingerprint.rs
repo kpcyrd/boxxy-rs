@@ -20,8 +20,8 @@ fn main() {
     for cert in certs {
         let fingerprint = {
             let mut h = Sha256::new();
-            h.input(&cert.0);
-            h.result()
+            h.update(&cert.0);
+            h.finalize()
         };
 
         let fingerprint = base64::encode_config(&fingerprint, base64::URL_SAFE_NO_PAD);
