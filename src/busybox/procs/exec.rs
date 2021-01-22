@@ -1,15 +1,11 @@
 use clap::{App, Arg, AppSettings};
-#[cfg(unix)]
-use libc;
-
-use crate::{Result, Shell, Arguments};
-
+use crate::{Shell, Arguments};
+use crate::errors::*;
 use std::process::Command;
 #[cfg(unix)]
 use std::process::Stdio;
 #[cfg(unix)]
 use std::os::unix::io::FromRawFd;
-
 
 pub fn exec(sh: &mut Shell, mut args: Arguments) -> Result<()> {
     if args.len() < 2 {

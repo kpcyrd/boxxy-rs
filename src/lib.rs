@@ -10,7 +10,6 @@
 //!
 //! ```
 //! #[macro_use] extern crate boxxy;
-//! extern crate env_logger;
 //!
 //! fn stage1(sh: &mut boxxy::Shell, args: Vec<String>) -> Result<(), boxxy::Error> {
 //!     shprintln!(sh, "init stage 1! {:?}", args);
@@ -37,52 +36,6 @@
 
 #![warn(unused_extern_crates)]
 
-#[macro_use] extern crate log;
-#[macro_use] extern crate error_chain;
-#[macro_use] extern crate cfg_if;
-
-mod error {
-    use std;
-    use clap;
-    use regex;
-    use errno;
-    use base64;
-
-    #[cfg(feature="network")]
-    use hyper;
-
-    #[cfg(feature="network")]
-    use http;
-
-    #[cfg(target_os="linux")]
-    use caps;
-
-    #[cfg(target_os="openbsd")]
-    use pledge;
-
-    error_chain! {
-        errors {
-            Errno(errno: errno::Errno) {
-                description("errno")
-                display("errno: {:?}", errno)
-            }
-        }
-        foreign_links {
-            Args(clap::Error);
-            Io(std::io::Error);
-            InvalidNum(std::num::ParseIntError);
-            InvalidRegex(regex::Error);
-            AddrParseError(std::net::AddrParseError);
-            Base64Decode(base64::DecodeError);
-            Uri(http::uri::InvalidUri) #[cfg(feature="network")];
-            Http(hyper::Error) #[cfg(feature="network")];
-            Caps(caps::errors::Error) #[cfg(target_os="linux")];
-            Pledge(pledge::Error) #[cfg(target_os="openbsd")];
-        }
-    }
-}
-pub use self::error::{Result, Error, ErrorKind};
-
 #[macro_use] mod macros;
 pub mod busybox;
 #[cfg(feature="readline")]
@@ -90,10 +43,12 @@ pub mod completer;
 #[cfg(feature="network")]
 pub mod crypto;
 pub mod ctrl;
+pub mod errors;
 pub mod ffi;
 pub mod shell;
 
 pub use crate::ctrl::Interface;
+pub use errors::{Result, Error};
 pub use crate::shell::{Shell, Toolbox};
 pub use crate::shell::{Command, NativeCommand, ForeignCommand};
 

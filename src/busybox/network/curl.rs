@@ -1,20 +1,14 @@
 use clap::{App, Arg, AppSettings};
-
-use hyper;
-use hyper::client::Client;
-use hyper_rustls::HttpsConnector;
-use url::Url;
-
-use tokio_core::reactor;
-use futures;
+use crate::{Shell, Arguments};
+use crate::errors::*;
 use futures::Stream;
 use futures::future::Future;
-
-use crate::{Result, Shell, Arguments};
-
+use hyper::client::Client;
+use hyper_rustls::HttpsConnector;
 use std::fs::File;
 use std::io::prelude::*;
-
+use tokio_core::reactor;
+use url::Url;
 
 pub fn curl(sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("curl")
@@ -46,7 +40,7 @@ pub fn curl(sh: &mut Shell, args: Arguments) -> Result<()> {
     let verbose = matches.occurrences_of("verbose") > 0;
     let remote_name = matches.occurrences_of("remote-name") > 0;
     let follow_location = matches.occurrences_of("location") > 0;
-    let mut output = matches.value_of("output").and_then(|x| Some(String::from(x)));
+    let mut output = matches.value_of("output").map(String::from);
     // TODO: show error if != 200
 
     let url = matches.value_of("url").unwrap();

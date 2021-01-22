@@ -1,8 +1,7 @@
+use caps::{Capability, CapSet};
 use clap::{App, Arg, AppSettings, ArgGroup};
-use caps::{self, Capability, CapSet};
-
-use crate::{Result, Shell, Arguments};
-
+use crate::{Shell, Arguments};
+use crate::errors::*;
 use std::result;
 use std::str::FromStr;
 use std::collections::HashSet;
@@ -89,7 +88,7 @@ pub fn caps(sh: &mut Shell, args: Arguments) -> Result<()> {
         }
     } else if set {
         info!("caps(set): {:?}", capabilities);
-        caps::set(None, capset, capabilities)?;
+        caps::set(None, capset, &capabilities)?;
     } else {
         let caps = caps::read(None, capset)?;
         shprintln!(sh, "{:?}", caps);

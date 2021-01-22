@@ -1,9 +1,6 @@
 use clap::{App, Arg, AppSettings};
-use libc;
-use errno::errno;
-
-use crate::{Result, Shell, ErrorKind, Arguments};
-
+use crate::{Shell, Arguments};
+use crate::errors::*;
 
 pub fn seteuid(_sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("seteuid")
@@ -17,8 +14,7 @@ pub fn seteuid(_sh: &mut Shell, args: Arguments) -> Result<()> {
     let ret = unsafe { libc::seteuid(uid) };
 
     if ret != 0 {
-        let err = errno();
-        Err(ErrorKind::Errno(err).into())
+        Err(errno())
     } else {
         Ok(())
     }

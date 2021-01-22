@@ -1,7 +1,6 @@
 #[macro_use] extern crate boxxy;
-extern crate env_logger;
 
-fn example(sh: &mut boxxy::Shell, args: Vec<String>) -> Result<(), boxxy::Error> {
+fn example(sh: &mut boxxy::Shell, args: Vec<String>) -> boxxy::Result<()> {
     shprintln!(sh, "The world is your oyster! {:?}", args);
     Ok(())
 }

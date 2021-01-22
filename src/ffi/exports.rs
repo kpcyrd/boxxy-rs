@@ -1,9 +1,7 @@
-use libc;
-
 use crate::{Shell, Toolbox};
+use crate::errors::*;
 use crate::ffi::ForeignCommand;
 use std::ffi::CStr;
-
 
 /// Crate a shell, returns a pointer.
 #[no_mangle]

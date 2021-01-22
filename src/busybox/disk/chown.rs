@@ -1,11 +1,7 @@
 use clap::{App, Arg, AppSettings};
-use libc;
-use errno::errno;
-
-use crate::{Result, Shell, Arguments};
-
+use crate::{Shell, Arguments};
+use crate::errors::*;
 use std::ffi::CString;
-
 
 pub fn chown(sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("chown")

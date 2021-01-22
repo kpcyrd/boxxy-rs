@@ -1,8 +1,7 @@
-use clap::{App, SubCommand, AppSettings};
 use caps::securebits;
-
-use crate::{Result, Shell, Arguments};
-
+use clap::{App, SubCommand, AppSettings};
+use crate::{Shell, Arguments};
+use crate::errors::*;
 
 pub fn keepcaps(sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("caps")

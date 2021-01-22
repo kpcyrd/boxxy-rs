@@ -1,9 +1,7 @@
 use clap::{App, Arg, AppSettings};
-
-use crate::{Result, Shell, Arguments};
-
+use crate::{Shell, Arguments};
+use crate::errors::*;
 use std::fs;
-
 
 pub fn rm(sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("rm")

@@ -1,4 +1,3 @@
-use rustls;
 use rustls::{Session, ClientSession};
 
 use std::io;
@@ -7,12 +6,8 @@ use std::net::TcpStream;
 
 
 pub mod danger {
-    use rustls;
+    use crate::errors::*;
     use sha2::{Sha256, Digest};
-    use base64;
-    use webpki;
-
-    use crate::error::Error;
 
     pub struct PinnedCertificateVerification {}
 
@@ -38,7 +33,7 @@ pub mod danger {
         if trusted_fp == fingerprint {
             Ok(())
         } else {
-            Err("untrusted fingerprint".into())
+            bail!("untrusted fingerprint")
         }
     }
 

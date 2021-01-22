@@ -26,7 +26,5 @@ fn main() {
 
         let fingerprint = base64::encode_config(&fingerprint, base64::URL_SAFE_NO_PAD);
         println!("SHA256-{}", fingerprint);
-
-        break;
     }
 }

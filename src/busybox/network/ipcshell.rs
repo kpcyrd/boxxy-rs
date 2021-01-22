@@ -1,11 +1,9 @@
-use clap::{App, Arg, AppSettings};
 use bufstream::BufStream;
-
-use crate::{Result, Shell, Arguments};
+use clap::{App, Arg, AppSettings};
+use crate::{Shell, Arguments};
+use crate::errors::*;
 use crate::ctrl::Interface;
-
 use std::os::unix::net::UnixStream;
-
 
 pub fn ipcshell(sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("ipcshell")

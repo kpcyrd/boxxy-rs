@@ -95,7 +95,7 @@ pub enum Interface {
     Fancy((io::Stdin, io::Stdout, Editor<CmdCompleter>)),
     Stdio(BufStream<RW<io::Stdin, io::Stdout>>),
     File(BufStream<RW<File, File>>),
-    RWPair(BufStream<RW<Box<R>, Box<W>>>),
+    RWPair(BufStream<RW<Box<dyn R>, Box<dyn W>>>),
     #[cfg(feature="network")]
     Tls(Box<BufStream<OwnedTlsStream>>),
     #[cfg(all(unix, feature="network"))]
@@ -135,7 +135,7 @@ impl Interface {
         Interface::File(BufStream::new(RW(input, output)))
     }
 
-    pub fn rw_pair(input: Box<R>, output: Box<W>) -> Interface {
+    pub fn rw_pair(input: Box<dyn R>, output: Box<dyn W>) -> Interface {
         Interface::RWPair(BufStream::new(RW(input, output)))
     }
 
