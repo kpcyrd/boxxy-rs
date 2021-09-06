@@ -1,18 +1,7 @@
-extern crate rusoto_core;
-extern crate rusoto_lambda;
-extern crate rusoto_sts;
-extern crate zip;
-extern crate base64;
-extern crate rustyline;
-extern crate env_logger;
-extern crate serde_json;
-#[macro_use] extern crate serde_derive;
-#[macro_use] extern crate structopt;
-#[macro_use] extern crate error_chain;
-#[macro_use] extern crate log;
+mod errors;
+use crate::errors::*;
 
 use rusoto_core::Region;
-use rusoto_core::reactor::{RequestDispatcher, CredentialsProvider};
 use rusoto_lambda::{LambdaClient, Lambda,
                     InvocationRequest, InvocationResponse,
                     GetFunctionRequest, GetFunctionResponse,
@@ -20,6 +9,7 @@ use rusoto_lambda::{LambdaClient, Lambda,
                     FunctionCode};
 use rusoto_sts::{StsClient, StsAssumeRoleSessionCredentialsProvider};
 
+use serde::{Serialize, Deserialize};
 use structopt::StructOpt;
 use zip::write::{ZipWriter, FileOptions};
 use rustyline::error::ReadlineError;
@@ -29,30 +19,6 @@ use std::io::prelude::*;
 use std::fs::File;
 use std::fmt::{self, Display};
 use std::default::Default;
-
-
-mod errors {
-    use std;
-    use serde_json;
-    use rusoto_core;
-    use rusoto_lambda;
-    use zip;
-
-    error_chain!{
-        foreign_links {
-            Io(std::io::Error);
-            Utf8(std::string::FromUtf8Error);
-            ParseRegion(rusoto_core::ParseRegionError);
-            GetFunction(rusoto_lambda::GetFunctionError);
-            CreateFunction(rusoto_lambda::CreateFunctionError);
-            Invoke(rusoto_lambda::InvokeError);
-            Json(serde_json::Error);
-            Zip(zip::result::ZipError);
-        }
-    }
-}
-use errors::{Result};
-
 
 #[derive(StructOpt, Debug)]
 struct Args {
@@ -69,81 +35,67 @@ struct Args {
 }
 
 
-pub enum BoxxyLambdaClient {
-    StsAssumeRole(LambdaClient<StsAssumeRoleSessionCredentialsProvider>),
-    Credentials(LambdaClient<CredentialsProvider>),
+pub struct BoxxyLambdaClient {
+    client: LambdaClient,
 }
 
 impl BoxxyLambdaClient {
     pub fn new(role: Option<String>, region: Region) -> BoxxyLambdaClient {
-        match role {
-            Some(role) => {
-                let sts = StsClient::simple(region.clone());
+        let client = if let Some(role) = role {
+                let sts = StsClient::new(region.clone());
                 let provider = StsAssumeRoleSessionCredentialsProvider::new(
                     sts,
                     role,
                     "default".to_string(),
                     None, None, None, None
                 );
-                let dispatcher = RequestDispatcher::default();
-                let lambda = LambdaClient::new(dispatcher, provider, region.clone());
-                BoxxyLambdaClient::StsAssumeRole(lambda)
-            },
-            None => {
-                let provider = CredentialsProvider::default();
-                let dispatcher = RequestDispatcher::default();
-                let lambda = LambdaClient::new(dispatcher, provider, region.clone());
-                BoxxyLambdaClient::Credentials(lambda)
-            },
-        }
+                // let dispatcher = RequestDispatcher::default();
+                let dispatcher = rusoto_core::request::HttpClient::new().unwrap();
+                LambdaClient::new_with(dispatcher, provider, region)
+        } else {
+            LambdaClient::new(region)
+        };
+        BoxxyLambdaClient { client }
     }
 
     #[inline]
-    pub fn get_function(&self, x: &GetFunctionRequest) -> Result<GetFunctionResponse> {
-        use BoxxyLambdaClient::*;
-        let r = match *self {
-            StsAssumeRole(ref c) => c.get_function(x).sync(),
-            Credentials(ref c) => c.get_function(x).sync(),
-        };
+    pub async fn get_function(&self, x: GetFunctionRequest) -> Result<GetFunctionResponse> {
+        let r = self.client.get_function(x).await;
         debug!("get_function response: {:?}", r);
         Ok(r?)
     }
 
     #[inline]
-    pub fn create_function(&self, x: &CreateFunctionRequest) -> Result<FunctionConfiguration> {
-        use BoxxyLambdaClient::*;
-        let r = match *self {
-            StsAssumeRole(ref c) => c.create_function(x).sync(),
-            Credentials(ref c) => c.create_function(x).sync(),
-        };
+    pub async fn create_function(&self, x: CreateFunctionRequest) -> Result<FunctionConfiguration> {
+        let r = self.client.create_function(x).await;
         debug!("create_function response: {:?}", r);
         Ok(r?)
     }
 
-    pub fn create_boxxy<I: Into<String>, J: Into<String>>(&self, function_name: I, role: J, zip: Vec<u8>) -> Result<String> {
-        let x = self.create_function(&CreateFunctionRequest {
+    pub async fn create_boxxy<I: Into<String>, J: Into<String>>(&self, function_name: I, role: J, zip: Vec<u8>) -> Result<String> {
+        let x = self.create_function(CreateFunctionRequest {
             code: FunctionCode {
-                zip_file: Some(zip),
+                zip_file: Some(zip.into()),
                 ..Default::default()
             },
             function_name: function_name.into(),
-            handler: "client.run".to_string(),
+            handler: Some("client.run".to_string()),
             role: role.into(),
-            runtime: "python3.6".to_string(),
+            runtime: Some("python3.6".to_string()),
             ..Default::default()
-        })?;
+        }).await?;
 
         let function = x.function_arn.unwrap();
         Ok(function)
     }
 
-    pub fn ensure_function_exists<I: Into<String>, J: Into<String>>(&self, function: I, role: J, zip: Vec<u8>) -> Result<String> {
+    pub async fn ensure_function_exists<I: Into<String>, J: Into<String>>(&self, function: I, role: J, zip: Vec<u8>) -> Result<String> {
         let function_name = function.into();
 
-        let f = self.get_function(&GetFunctionRequest {
+        let f = self.get_function(GetFunctionRequest {
             function_name: function_name.clone(),
             ..Default::default()
-        });
+        }).await;
 
         let function_arn = match f {
             Ok(f) => {
@@ -155,7 +107,7 @@ impl BoxxyLambdaClient {
                 println!("[+] creating function...");
                 self.create_boxxy(function_name,
                                   role,
-                                  zip)?
+                                  zip).await?
             },
         };
 
@@ -163,30 +115,26 @@ impl BoxxyLambdaClient {
     }
 
     #[inline]
-    pub fn invoke(&self, x: &InvocationRequest) -> Result<InvocationResponse> {
-        use BoxxyLambdaClient::*;
-        let r = match *self {
-            StsAssumeRole(ref c) => c.invoke(x).sync(),
-            Credentials(ref c) => c.invoke(x).sync(),
-        };
+    pub async fn invoke(&self, x: InvocationRequest) -> Result<InvocationResponse> {
+        let r = self.client.invoke(x).await;
         debug!("invoke response: {:?}", r);
         Ok(r?)
     }
 
-    pub fn invoke_boxxy<I: Into<String>>(&self, function: I, cmd: &Command) -> Result<ResponseResult> {
+    pub async fn invoke_boxxy<I: Into<String>>(&self, function: I, cmd: &Command) -> Result<ResponseResult> {
         let function = function.into();
         info!("invoking {:?} with {:?}", function, cmd);
         let payload = serde_json::to_string(cmd)?;
 
-        let r = self.invoke(&InvocationRequest {
+        let r = self.invoke(InvocationRequest {
             function_name: function,
-            payload: Some(payload.into_bytes()),
+            payload: Some(payload.into()),
             ..Default::default()
-        })?;
+        }).await?;
 
         let payload = r.payload.unwrap();
 
-        let resp = String::from_utf8(payload)?;
+        let resp = String::from_utf8(payload.to_vec())?;
         debug!("invoke response payload: {:?}", resp);
 
         let resp = serde_json::from_str::<RawResponse>(&resp)?;
@@ -247,16 +195,16 @@ pub struct RawResponse {
     stderr: Option<String>,
 }
 
-impl Into<ResponseResult> for RawResponse {
-    fn into(self) -> ResponseResult {
-        if self.error_type.is_some() || self.error_message.is_some() {
+impl From<RawResponse> for ResponseResult {
+    fn from(resp: RawResponse) -> ResponseResult {
+        if resp.error_type.is_some() || resp.error_message.is_some() {
             ResponseResult::Err(LambdaError {
-                error_type: self.error_type,
-                error_message: self.error_message,
+                error_type: resp.error_type,
+                error_message: resp.error_message,
             })
         } else {
-            let stdout = base64::decode(&self.stdout.unwrap()).unwrap();
-            let stderr = base64::decode(&self.stderr.unwrap()).unwrap();
+            let stdout = base64::decode(&resp.stdout.unwrap()).unwrap();
+            let stderr = base64::decode(&resp.stderr.unwrap()).unwrap();
             ResponseResult::Ok(Response {
                 stdout,
                 stderr,
@@ -310,7 +258,8 @@ pub fn escape(line: &str) -> String {
         .collect()
 }
 
-fn run() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     env_logger::init();
     let args = Args::from_args();
 
@@ -325,7 +274,7 @@ fn run() -> Result<()> {
 
     let function_arn = lambda.ensure_function_exists(args.function_name.as_str(),
                                                      args.role,
-                                                     zip)?;
+                                                     zip).await?;
     println!("[+] function {:?} is ready", function_arn);
 
     let mut stdout = io::stdout();
@@ -339,9 +288,9 @@ fn run() -> Result<()> {
 
         match readline {
             // ignore empty lines
-            Ok(ref line) if line.len() == 0 => (),
+            Ok(ref line) if line.is_empty() => (),
             Ok(line) => {
-                rl.add_history_entry(line.as_ref());
+                rl.add_history_entry(line.as_str());
 
                 if line.starts_with("enter ") {
                     if line.starts_with("enter b") {
@@ -365,7 +314,7 @@ fn run() -> Result<()> {
                     },
                 };
 
-                match lambda.invoke_boxxy(args.function_name.as_str(), &cmd)? {
+                match lambda.invoke_boxxy(args.function_name.as_str(), &cmd).await? {
                     ResponseResult::Ok(resp) => {
                         stdout.write_all(&resp.stdout)?;
                         stdout.flush()?;
@@ -391,22 +340,4 @@ fn run() -> Result<()> {
     // println!("TODO: cleanup");
 
     Ok(())
-}
-
-fn main() {
-    if let Err(ref e) = run() {
-        eprintln!("error: {}", e);
-
-        for e in e.iter().skip(1) {
-            eprintln!("caused by: {}", e);
-        }
-
-        // The backtrace is not always generated. Try to run this example
-        // with `RUST_BACKTRACE=1`.
-        if let Some(backtrace) = e.backtrace() {
-            eprintln!("backtrace: {:?}", backtrace);
-        }
-
-        ::std::process::exit(1);
-    }
 }
