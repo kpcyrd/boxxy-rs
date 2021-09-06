@@ -10,8 +10,7 @@ pub fn setgroups(groups: &[gid_t]) -> Result<()> {
     let ret = unsafe { libc::setgroups(groups.len() as i32, groups.as_ptr()) };
 
     if ret < 0 {
-        let err = errno();
-        Err(ErrorKind::Errno(err).into())
+        Err(errno())
     } else {
         Ok(())
     }

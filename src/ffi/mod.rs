@@ -60,7 +60,6 @@ impl ForeignCommand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use libc;
 
     #[test]
     #[cfg(target_os="linux")]

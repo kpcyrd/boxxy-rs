@@ -1,0 +1,37 @@
+name: Rust
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build (no default features)
+      run: cargo build --verbose --all-targets --no-default-features
+    - name: Build (default features)
+      run: cargo build --verbose --all-targets
+    - name: Build (all features)
+      run: cargo build --verbose --all-targets --all-features
+
+    - name: Build (autoboxxy)
+      run: cargo build -p autoboxxy --verbose --all-targets --all-features
+      if: ${{ matrix.os == 'ubuntu-latest' }}
+    - name: Build (lambdash)
+      run: cargo build -p lambdash --verbose --all-targets --all-features
+
+    - name: Run tests
+      run: cargo test --verbose --all-targets --all-features
