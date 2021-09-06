@@ -396,14 +396,11 @@ impl Shell {
 
         let result: Option<Command> = {
             let toolbox = self.toolbox.lock().unwrap();
-            match toolbox.get(&cmd.prog) {
-                Some(x) => Some(x.clone()),
-                None => None,
-            }
+            toolbox.get(&cmd.prog).cloned()
         };
 
         let result = match (result, cmd.bg) {
-            (Some(func), true) => func.daemonized(&self, cmd.args),
+            (Some(func), true) => func.daemonized(self, cmd.args),
             (Some(func), false) => func.run(self, cmd.args),
             (None, _) => Err(anyhow!("Unknown command")),
         };
@@ -527,7 +524,7 @@ pub struct InputCmd {
 #[inline]
 fn parse_line(line: &str) -> Option<InputCmd> {
     trace!("line: {:?}", line);
-    if is_comment(&line) {
+    if is_comment(line) {
         return None;
     }
 
@@ -537,7 +534,7 @@ fn parse_line(line: &str) -> Option<InputCmd> {
         (false, line)
     };
 
-    let cmd = tokenize(&line);
+    let cmd = tokenize(line);
     debug!("got {:?}", cmd);
 
     if cmd.is_empty() {
