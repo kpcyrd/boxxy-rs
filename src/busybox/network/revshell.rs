@@ -1,15 +1,13 @@
-use clap::{App, Arg, AppSettings};
-use rustls::{ClientSession, ClientConfig};
-use webpki::DNSNameRef;
 use bufstream::BufStream;
-
-use crate::{Result, Shell, Arguments};
+use clap::{App, Arg, AppSettings};
+use crate::{Shell, Arguments};
 use crate::ctrl::Interface;
 use crate::crypto::{self, OwnedTlsStream};
-
+use crate::errors::*;
+use rustls::{ClientSession, ClientConfig};
 use std::sync::Arc;
 use std::net::{TcpStream, SocketAddr};
-
+use webpki::DNSNameRef;
 
 pub fn revshell(sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("revshell")

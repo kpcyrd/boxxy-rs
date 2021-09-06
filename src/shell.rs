@@ -1,11 +1,8 @@
 //! The interactive shell.
 
 use crate::busybox;
-use clap;
-
-use crate::Error;
-use crate::ErrorKind;
 use crate::ctrl::{Interface, PromptError};
+use crate::errors::*;
 pub use crate::ffi::ForeignCommand;
 use std::io;
 use std::io::prelude::*;
@@ -399,27 +396,25 @@ impl Shell {
 
         let result: Option<Command> = {
             let toolbox = self.toolbox.lock().unwrap();
-            match toolbox.get(&cmd.prog) {
-                Some(x) => Some(x.clone()),
-                None => None,
-            }
+            toolbox.get(&cmd.prog).cloned()
         };
 
         let result = match (result, cmd.bg) {
-            (Some(func), true) => func.daemonized(&self, cmd.args),
+            (Some(func), true) => func.daemonized(self, cmd.args),
             (Some(func), false) => func.run(self, cmd.args),
-            (None, _) => Err(ErrorKind::Args(clap::Error {
-                message: String::from("\u{1b}[1;31merror:\u{1b}[0m unknown command"),
-                kind: clap::ErrorKind::MissingRequiredArgument,
-                info: None,
-            }).into()),
+            (None, _) => Err(anyhow!("Unknown command")),
         };
 
         if let Err(err) = result {
-            match *err.kind() {
-                ErrorKind::Args(ref err)    => shprintln!(self, "{}", err.message),
-                _                           => shprintln!(self, "error: {:?}", err),
-            }
+            let err = format!("{:#}", err);
+            // hacky workaround for clap
+            let err = if !err.starts_with("error: ") {
+                format!("error: {}", err)
+            } else {
+                err
+            };
+
+            shprintln!(self, "{}", err);
         }
     }
 
@@ -529,17 +524,17 @@ pub struct InputCmd {
 #[inline]
 fn parse_line(line: &str) -> Option<InputCmd> {
     trace!("line: {:?}", line);
-    if is_comment(&line) {
+    if is_comment(line) {
         return None;
     }
 
-    let (bg, line) = if line.ends_with(" &") {
-        (true, &line[..line.len()-2])
+    let (bg, line) = if let Some(line) = line.strip_suffix(" &") {
+        (true, line)
     } else {
         (false, line)
     };
 
-    let cmd = tokenize(&line);
+    let cmd = tokenize(line);
     debug!("got {:?}", cmd);
 
     if cmd.is_empty() {

@@ -1,7 +1,6 @@
 use clap::{App, Arg, AppSettings};
-
-use crate::{Result, Shell, Arguments};
-
+use crate::{Shell, Arguments};
+use crate::errors::*;
 use std::fs::{self, DirEntry};
 use std::time::SystemTime;
 #[cfg(unix)]
@@ -60,7 +59,7 @@ fn since(time: SystemTime) -> String {
     }
 }
 
-cfg_if! {
+cfg_if::cfg_if! {
     if #[cfg(unix)] {
         #[inline]
         fn decorate(entry: &DirEntry) -> String {

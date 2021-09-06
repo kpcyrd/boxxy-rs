@@ -1,11 +1,9 @@
 use clap::{App, Arg, AppSettings};
-
-use crate::{Result, Shell, Arguments};
-
+use crate::{Shell, Arguments};
+use crate::errors::*;
 use std::fs::File;
 use std::io::BufReader;
 use std::io::prelude::*;
-
 
 pub fn cat(sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("cat")

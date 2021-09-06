@@ -1,11 +1,8 @@
 use clap::{App, Arg, AppSettings};
-use base64;
-use libc;
-
-use crate::{Result, Shell, Arguments};
-
+use crate::{Shell, Arguments};
+use crate::errors::*;
 use std::mem;
-
+use std::mem::MaybeUninit;
 
 pub fn jit(sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("jit")
@@ -34,9 +31,13 @@ pub fn jit(sh: &mut Shell, args: Arguments) -> Result<()> {
 
     let num_pages = 1;
     let size = num_pages * PAGE_SIZE;
-    let mut page: *mut libc::c_void = unsafe { mem::uninitialized() };
 
-    unsafe { libc::posix_memalign(&mut page, PAGE_SIZE, size) };
+    let mut page = MaybeUninit::<*mut libc::c_void>::uninit();
+    let page = unsafe {
+        libc::posix_memalign(page.as_mut_ptr(), PAGE_SIZE, size);
+        page.assume_init()
+    };
+
     unsafe { libc::mprotect(page, size, libc::PROT_READ | libc::PROT_WRITE) };
     unsafe { libc::memcpy(page, shellcode.as_mut_ptr() as *mut libc::c_void, shellcode.len()) };
     unsafe { libc::mprotect(page, size, libc::PROT_READ | libc::PROT_EXEC) };

@@ -35,7 +35,7 @@ fn pipe(mut r: impl Read, mut w: impl Write) {
             break;
         }
 
-        w.write(&buf[..n]).expect("write");
+        w.write_all(&buf[..n]).expect("write");
         w.flush().expect("flush");
     }
 }
@@ -90,10 +90,8 @@ fn main() {
 
     let f = stream.into_raw_fd();
 
-    let fd = f.clone();
-    let t1 = thread::spawn(move || pipe(from(fd), io::stdout()));
-    let fd = f.clone();
-    let t2 = thread::spawn(move || pipe(io::stdin(), from(fd)));
+    let t1 = thread::spawn(move || pipe(from(f), io::stdout()));
+    let t2 = thread::spawn(move || pipe(io::stdin(), from(f)));
 
     t1.join().unwrap();
     t2.join().unwrap();

@@ -41,6 +41,8 @@ impl Completer for CmdCompleter {
 }
 
 impl Hinter for CmdCompleter {
+    type Hint = String;
+
     #[inline]
     fn hint(&self, _line: &str, _pos: usize, _ctx: &Context<'_>) -> Option<String> {
         None
@@ -53,5 +55,7 @@ impl Highlighter for CmdCompleter {
         Borrowed(hint)
     }
 }
+
+impl rustyline::validate::Validator for CmdCompleter {}
 
 impl rustyline::Helper for CmdCompleter {}

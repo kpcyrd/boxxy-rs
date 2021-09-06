@@ -1,10 +1,6 @@
 use clap::{App, Arg, AppSettings};
-
-use crate::{Result, Shell, Arguments};
-use crate::error::ResultExt;
-
-use nix;
-
+use crate::{Shell, Arguments};
+use crate::errors::*;
 
 pub fn fchdir(_sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("fds")
@@ -15,10 +11,10 @@ pub fn fchdir(_sh: &mut Shell, args: Arguments) -> Result<()> {
         .get_matches_from_safe(args)?;
 
     let fd: i32 = matches.value_of("fd").unwrap().parse()
-        .chain_err(|| "Failed to parse fds")?;
+        .context("Failed to parse fds")?;
 
     nix::unistd::fchdir(fd)
-        .chain_err(|| "Failed to fchdir")?;
+        .context("Failed to fchdir")?;
 
     Ok(())
 }

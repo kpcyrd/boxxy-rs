@@ -1,10 +1,6 @@
 use clap::{App, Arg, AppSettings};
-
-use crate::{Result, Shell, Arguments};
-use crate::error::ResultExt;
-
-use nix;
-
+use crate::{Shell, Arguments};
+use crate::errors::*;
 
 pub fn fds(sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("fds")
@@ -15,7 +11,7 @@ pub fn fds(sh: &mut Shell, args: Arguments) -> Result<()> {
         .get_matches_from_safe(args)?;
 
     let max_fds: i32 = matches.value_of("max-fds").unwrap().parse()
-        .chain_err(|| "Failed to parse max-fds")?;
+        .context("Failed to parse max-fds")?;
 
     for i in 0..max_fds {
         if let Ok(fd) = nix::unistd::dup(i) {

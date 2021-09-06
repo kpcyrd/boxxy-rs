@@ -1,29 +1,23 @@
-use libc::{self, uid_t, gid_t};
-use errno::errno;
+use crate::errors::*;
 use crate::shell;
-
-use crate::{Result, ErrorKind};
-
+use libc::{uid_t, gid_t};
+use std::process;
 
 pub fn getuid() -> Result<uid_t> {
     let uid = unsafe { libc::getuid() };
     Ok(uid)
 }
 
-
 pub fn geteuid() -> Result<uid_t> {
     let euid = unsafe { libc::geteuid() };
     Ok(euid)
 }
 
-
-
 pub fn setuid(uid: uid_t) -> Result<()> {
     let ret = unsafe { libc::setuid(uid) };
 
     if ret != 0 {
-        let err = errno();
-        Err(ErrorKind::Errno(err).into())
+        Err(errno())
     } else {
         Ok(())
     }
@@ -55,8 +49,7 @@ pub fn getgroups() -> Result<Vec<gid_t>> {
     let ret = unsafe { libc::getgroups(size, gids.as_mut_ptr()) };
 
     if ret < 0 {
-        let err = errno();
-        Err(ErrorKind::Errno(err).into())
+        Err(errno())
     } else {
         let groups = (0..ret)
             .map(|i| unsafe { gids.get_unchecked(i as usize) }.to_owned())
@@ -73,13 +66,10 @@ pub enum Fork {
 
 pub fn fork() -> Result<Fork> {
     let ret = unsafe { libc::fork() };
-    if ret < 0 {
-        let err = errno();
-        Err(ErrorKind::Errno(err).into())
-    } else if ret > 0 {
-        Ok(Fork::Parent(ret))
-    } else {
-        Ok(Fork::Child)
+    match ret {
+        ret if ret < 0 => Err(errno()),
+        ret if ret > 0 => Ok(Fork::Parent(ret)),
+        _ => Ok(Fork::Child),
     }
 }
 
@@ -96,17 +86,15 @@ pub fn daemonize(mut shell: shell::Shell, func: shell::Command, args: Vec<String
         Fork::Child => {
             let ret = unsafe { libc::setsid() };
             if ret < 0 {
-                let err = errno();
-                println!("{:?}", ErrorKind::Errno(err));
-                ::std::process::exit(1);
+                println!("{:#}", errno());
+                process::exit(1);
             }
 
             if let Fork::Parent(_) = fork()? {
-                ::std::process::exit(0);
+                process::exit(0);
             }
 
-
-            ::std::process::exit(match func.run(&mut shell, args) {
+            process::exit(match func.run(&mut shell, args) {
                 Ok(_) => 0,
                 Err(_) => 1,
             });

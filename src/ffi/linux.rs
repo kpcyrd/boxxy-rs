@@ -1,9 +1,5 @@
-use libc::{self, uid_t, gid_t};
-use errno::errno;
-
-use crate::{Result, ErrorKind};
-
-
+use crate::errors::*;
+use libc::{uid_t, gid_t};
 
 /// Get the real uid, effective uid and saved uid.
 ///
@@ -19,8 +15,7 @@ pub fn getresuid() -> Result<(uid_t, uid_t, uid_t)> {
     let ret = unsafe { libc::getresuid(&mut ruid, &mut euid, &mut suid) };
 
     if ret != 0 {
-        let err = errno();
-        Err(ErrorKind::Errno(err).into())
+        Err(errno())
     } else {
         Ok((ruid, euid, suid))
     }
@@ -41,8 +36,7 @@ pub fn getresgid() -> Result<(gid_t, gid_t, gid_t)> {
     let ret = unsafe { libc::getresgid(&mut rgid, &mut egid, &mut sgid) };
 
     if ret != 0 {
-        let err = errno();
-        Err(ErrorKind::Errno(err).into())
+        Err(errno())
     } else {
         Ok((rgid, egid, sgid))
     }
@@ -58,8 +52,7 @@ pub fn setgroups(groups: &[gid_t]) -> Result<()> {
     let ret = unsafe { libc::setgroups(groups.len(), groups.as_ptr()) };
 
     if ret < 0 {
-        let err = errno();
-        Err(ErrorKind::Errno(err).into())
+        Err(errno())
     } else {
         Ok(())
     }

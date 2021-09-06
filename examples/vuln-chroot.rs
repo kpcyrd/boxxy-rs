@@ -1,8 +1,5 @@
 #![cfg_attr(not(unix), allow(unused_imports, dead_code))]
 extern crate boxxy;
-extern crate env_logger;
-extern crate libc;
-extern crate errno;
 
 use std::env;
 use std::ffi::CString;

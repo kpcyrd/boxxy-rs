@@ -1,11 +1,9 @@
 use clap::{App, Arg, AppSettings};
-use libc::gid_t;
-
-use crate::{Result, Shell, Arguments};
+use crate::{Shell, Arguments};
+use crate::errors::*;
 use crate::ffi;
-
+use libc::gid_t;
 use std::result;
-
 
 pub fn setgroups(_sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("setgroups")

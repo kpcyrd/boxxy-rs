@@ -1,8 +1,6 @@
 use clap::{App, Arg, AppSettings};
-use nix;
-
-use crate::{Result, Shell, Arguments};
-
+use crate::{Shell, Arguments};
+use crate::errors::*;
 
 pub fn mount(sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("mount")

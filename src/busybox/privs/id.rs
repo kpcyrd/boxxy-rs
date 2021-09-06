@@ -1,8 +1,8 @@
-use crate::{Result, Shell, Arguments};
+use crate::{Shell, Arguments};
+use crate::errors::*;
 use crate::ffi;
 
-
-cfg_if! {
+cfg_if::cfg_if! {
     if #[cfg(target_os="linux")] {
         pub fn id(sh: &mut Shell, _args: Arguments) -> Result<()> {
             let (ruid, euid, suid) = ffi::getresuid()?;

@@ -1,5 +1,5 @@
 //! Abstractions of some unsafe functions.
-use crate::Error;
+use crate::errors::*;
 use std::ptr;
 use std::ffi::CString;
 use std::os::raw::c_char;
@@ -12,9 +12,9 @@ mod linux;
 #[cfg(target_os="linux")]
 pub use self::linux::*;
 
-#[cfg(macos)]
+#[cfg(target_os="macos")]
 mod macos;
-#[cfg(macos)]
+#[cfg(target_os="macos")]
 pub use self::macos::*;
 
 #[cfg(windows)]
@@ -33,6 +33,7 @@ mod unix;
 pub use self::unix::*;
 
 
+#[repr(C)]
 #[derive(Debug, Clone)]
 pub struct ForeignCommand(extern fn(usize, *const *const c_char) -> i32);
 

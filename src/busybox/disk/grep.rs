@@ -1,8 +1,7 @@
 use clap::{App, Arg, AppSettings};
+use crate::{Shell, Arguments};
+use crate::errors::*;
 use regex::Regex;
-
-use crate::{Result, Shell, Arguments};
-
 use std::fs::File;
 use std::io::BufReader;
 use std::io::prelude::*;
