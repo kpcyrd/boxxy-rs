@@ -1,26 +1,24 @@
-use clap::{App, Arg, AppSettings};
 use pledge::pledge as pledge_rs;
+use structopt::{StructOpt, clap::AppSettings};
 
 use crate::{Result, Shell, Arguments};
 
+#[derive(Debug, StructOpt)]
+#[structopt(global_settings = &[AppSettings::ColoredHelp])]
+pub struct Args {
+    #[structopt(short)]
+    promises: Option<String>,
+    #[structopt(short)]
+    exec_promises: Option<String>,
+}
+
 pub fn pledge(_sh: &mut Shell, args: Arguments) -> Result<()> {
-    let matches = App::new("pledge")
-        .setting(AppSettings::DisableVersion)
-        .arg(Arg::with_name("promises")
-            .multiple(true)
-        )
-        .get_matches_from_safe(args)?;
+    let args = Args::from_iter_safe(args)?;
 
-    let promises = match matches.values_of("promises") {
-        Some(promises) => promises.collect(),
-        None => Vec::new(),
-    };
+    let promises = args.promises.as_deref();
+    let exec_promises = args.exec_promises.as_deref();
 
-    let mut promises = promises.iter()
-                               .fold(String::new(), |a, b| a + &b + " ");
-    promises.pop();
-
-    pledge_rs(&promises)?;
+    pledge_rs(promises, exec_promises)?;
 
     Ok(())
 }
