@@ -1,17 +1,24 @@
-use rustls::{Session, ClientSession};
-
-use std::io;
+use rustls::ClientConnection;
 use std::io::prelude::*;
+use std::io;
 use std::net::TcpStream;
-
 
 pub mod danger {
     use crate::errors::*;
+    use rustls::{Certificate, ServerName};
+    use rustls::client::ServerCertVerified;
     use sha2::{Sha256, Digest};
+    use std::time::SystemTime;
 
     pub struct PinnedCertificateVerification {}
 
-    fn verify_fingerprint(trusted: &str, cert: &rustls::Certificate) -> Result<(), Error> {
+    fn verify_fingerprint(trusted: &ServerName, cert: &rustls::Certificate) -> Result<(), Error> {
+        let trusted = if let ServerName::DnsName(name) = trusted {
+            name.as_ref()
+        } else {
+            bail!("unsupported server name")
+        };
+
         let idx = match trusted.find('-') {
             Some(idx) => idx,
             None => bail!("malformed fingerprint"),
@@ -37,21 +44,21 @@ pub mod danger {
         }
     }
 
-    impl rustls::ServerCertVerifier for PinnedCertificateVerification {
-
-        fn verify_server_cert(&self,
-                              _roots: &rustls::RootCertStore,
-                              presented_certs: &[rustls::Certificate],
-                              dns_name: webpki::DNSNameRef,
-                              _ocsp: &[u8]) -> Result<rustls::ServerCertVerified, rustls::TLSError> {
-
-            for cert in presented_certs {
-                if verify_fingerprint(dns_name.into(), &cert).is_ok() {
-                    return Ok(rustls::ServerCertVerified::assertion());
-                }
+    impl rustls::client::ServerCertVerifier for PinnedCertificateVerification {
+        fn verify_server_cert(
+            &self,
+            end_entity: &Certificate,
+            _intermediates: &[Certificate],
+            server_name: &ServerName,
+            _scts: &mut dyn Iterator<Item = &[u8]>,
+            _ocsp_response: &[u8],
+            _now: SystemTime
+        ) -> Result<ServerCertVerified, rustls::Error> {
+            if verify_fingerprint(server_name, &end_entity).is_ok() {
+                Ok(ServerCertVerified::assertion())
+            } else {
+                Err(rustls::Error::General("Untrusted certificate".to_string()))
             }
-
-            Err(rustls::TLSError::WebPKIError(webpki::Error::CertNotValidForName))
         }
     }
 }
@@ -59,12 +66,12 @@ pub mod danger {
 
 #[derive(Debug)]
 pub struct OwnedTlsStream {
-    pub sess: rustls::ClientSession,
+    pub sess: rustls::ClientConnection,
     pub sock: TcpStream,
 }
 
 impl OwnedTlsStream {
-    pub fn new(sess: ClientSession, sock: TcpStream) -> OwnedTlsStream {
+    pub fn new(sess: ClientConnection, sock: TcpStream) -> OwnedTlsStream {
         OwnedTlsStream { sess, sock }
     }
 
@@ -89,7 +96,7 @@ impl Read for OwnedTlsStream {
             self.sess.complete_io(&mut self.sock)?;
         }
 
-        self.sess.read(buf)
+        self.sess.reader().read(buf)
     }
 }
 
@@ -97,7 +104,7 @@ impl Write for OwnedTlsStream {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.complete_prior_io()?;
 
-        let len = self.sess.write(buf)?;
+        let len = self.sess.writer().write(buf)?;
         self.sess.complete_io(&mut self.sock)?;
         Ok(len)
     }
@@ -105,7 +112,7 @@ impl Write for OwnedTlsStream {
     fn flush(&mut self) -> io::Result<()> {
         self.complete_prior_io()?;
 
-        self.sess.flush()?;
+        self.sess.writer().flush()?;
         if self.sess.wants_write() {
             self.sess.complete_io(&mut self.sock)?;
         }
