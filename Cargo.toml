@@ -23,7 +23,7 @@ default = ["readline"]
 full = ["readline", "network", "archives"]
 readline = ["rustyline"]
 network = ["reqwest", "tokio", "futures-util",
-           "rustls", "sha2", "webpki"]
+           "rustls", "sha2"]
 archives = ["tar", "libflate"]
 
 [dependencies]
@@ -33,7 +33,7 @@ structopt = "0.3"
 libc = "0.2"
 errno = "0.2"
 regex = "1.0"
-nix = "0.22"
+nix = "0.23"
 base64 = "0.13"
 anyhow = "1"
 bufstream = "0.1"
@@ -44,9 +44,8 @@ tar = { version = "0.4", optional = true }
 libflate = { version = "1", optional = true }
 
 # network: revshell
-rustls = { version = "0.16", features = ["dangerous_configuration"], optional = true }
+rustls = { version = "0.20", features = ["dangerous_configuration"], optional = true }
 sha2 = { version = "0.9", optional = true }
-webpki = { version = "0.21", optional = true }
 
 # network: curl
 reqwest = { version = "0.11", default-features=false, features=["stream", "rustls-tls-webpki-roots"], optional = true }
@@ -55,6 +54,9 @@ futures-util = { version = "0.3.12",  optional = true }
 
 # readline
 rustyline = { version = "9", optional = true }
+
+[target.'cfg(unix)'.dependencies]
+close_fds = "0.3.2"
 
 [target.'cfg(target_os="linux")'.dependencies]
 caps = "0.5"
@@ -66,5 +68,6 @@ pledge = "0.4"
 env_logger = "0.9"
 elf = "0.0.10"
 ctrlc = "3.1.0"
-rustls = "0.16"
+rustls = "0.20"
 sha2 = "0.9"
+pem = "1.0.1"

@@ -4,10 +4,10 @@ use crate::{Shell, Arguments};
 use crate::ctrl::Interface;
 use crate::crypto::{self, OwnedTlsStream};
 use crate::errors::*;
-use rustls::{ClientSession, ClientConfig};
+use rustls::{ClientConnection, ClientConfig, RootCertStore, ServerName};
+use std::convert::TryFrom;
 use std::sync::Arc;
 use std::net::{TcpStream, SocketAddr};
-use webpki::DNSNameRef;
 
 pub fn revshell(sh: &mut Shell, args: Arguments) -> Result<()> {
     let matches = App::new("revshell")
@@ -32,14 +32,15 @@ pub fn revshell(sh: &mut Shell, args: Arguments) -> Result<()> {
     let fingerprint = matches.value_of("fingerprint").unwrap();
     let run_loop = matches.occurrences_of("loop") > 0;
 
-    let mut config = ClientConfig::new();
+    let mut config = ClientConfig::builder()
+        .with_safe_defaults()
+        .with_root_certificates(RootCertStore::empty())
+        .with_no_client_auth();
     config.dangerous().set_certificate_verifier(Arc::new(crypto::danger::PinnedCertificateVerification {}));
 
-    let fingerprint = match DNSNameRef::try_from_ascii_str(fingerprint) {
-        Ok(fingerprint) => fingerprint,
-        Err(_) => bail!("fingerprint couldn't be converted to DNSNameRef"),
-    };
-    let sess = ClientSession::new(&Arc::new(config), fingerprint);
+    let fingerprint = ServerName::try_from(fingerprint)
+            .map_err(|_| anyhow!("fingerprint couldn't be converted to ServerName"))?;
+    let sess = ClientConnection::new(Arc::new(config), fingerprint)?;
 
     shprintln!(sh, "[*] connecting to {}...", addr);
     let sock = TcpStream::connect(&addr)?;
