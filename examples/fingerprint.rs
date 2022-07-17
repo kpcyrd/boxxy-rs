@@ -1,17 +1,16 @@
 use anyhow::{Context, Result};
+use clap::Parser;
 use sha2::{Sha256, Digest};
 use std::fs;
 use std::path::PathBuf;
-use structopt::{StructOpt, clap::AppSettings};
 
-#[derive(Debug, StructOpt)]
-#[structopt(global_settings = &[AppSettings::ColoredHelp])]
+#[derive(Debug, Parser)]
 pub struct Args {
     path: PathBuf,
 }
 
 fn main() -> Result<()> {
-    let args = Args::from_args();
+    let args = Args::parse();
 
     let buf = fs::read(&args.path)
         .context("Failed to read certificate file")?;

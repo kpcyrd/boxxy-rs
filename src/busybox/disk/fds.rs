@@ -1,14 +1,14 @@
-use crate::{Shell, Arguments};
+use clap::Parser;
 use crate::errors::*;
-use structopt::{StructOpt, clap::AppSettings};
+use crate::{Shell, Arguments};
 
-#[derive(Debug, StructOpt)]
-#[structopt(global_settings = &[AppSettings::ColoredHelp])]
+#[derive(Debug, Parser)]
+#[clap(name = "fds")]
 pub struct Args {
 }
 
 pub fn fds(sh: &mut Shell, args: Arguments) -> Result<()> {
-    let _args = Args::from_iter_safe(args)?;
+    let _args = Args::try_parse_from(args)?;
 
     for i in close_fds::iter_open_fds(0) {
         shprintln!(sh, "{:?}", i);

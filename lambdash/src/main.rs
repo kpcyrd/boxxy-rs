@@ -1,6 +1,7 @@
 mod errors;
 use crate::errors::*;
 
+use clap::Parser;
 use rusoto_core::Region;
 use rusoto_lambda::{LambdaClient, Lambda,
                     InvocationRequest, InvocationResponse,
@@ -10,7 +11,6 @@ use rusoto_lambda::{LambdaClient, Lambda,
 use rusoto_sts::{StsClient, StsAssumeRoleSessionCredentialsProvider};
 
 use serde::{Serialize, Deserialize};
-use structopt::StructOpt;
 use zip::write::{ZipWriter, FileOptions};
 use rustyline::error::ReadlineError;
 
@@ -20,17 +20,17 @@ use std::fs::File;
 use std::fmt::{self, Display};
 use std::default::Default;
 
-#[derive(StructOpt, Debug)]
+#[derive(Debug, Parser)]
 struct Args {
-    #[structopt(long="assume-role",
-                help="Assume into this role to create the lambda, can be cross account")]
+    /// Assume into this role to create the lambda, can be cross account
+    #[clap(long="assume-role")]
     assume_role: Option<String>,
-    #[structopt(long="role",
-                help="The role your lambda should use")]
+    /// The role your lambda should use
+    #[clap(long="role")]
     role: String,
-    #[structopt(help="The aws region name, eg eu-west-1")]
+    /// The aws region name, eg eu-west-1
     region: String,
-    #[structopt(help="The name if the lambda you want to create")]
+    /// The name if the lambda you want to create
     function_name: String, // TODO: generate one if empty
 }
 

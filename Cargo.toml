@@ -29,7 +29,6 @@ archives = ["tar", "libflate"]
 [dependencies]
 log = "0.4"
 clap = { version = "3", default-features = false, features=["std", "derive"] }
-structopt = "0.3"
 libc = "0.2"
 errno = "0.2"
 regex = "1.0"
