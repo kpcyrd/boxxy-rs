@@ -1,25 +1,27 @@
-use clap::{App, Arg, AppSettings};
+use clap::Parser;
 use crate::{Shell, Arguments};
 use crate::errors::*;
 use std::fs;
+use std::path::PathBuf;
+
+#[derive(Parser)]
+#[clap(name = "rm")]
+struct Args {
+    /// Recursively delete folders
+    #[clap(short, long)]
+    recursive: bool,
+    /// Paths to delete
+    #[clap(required = true)]
+    paths: Vec<PathBuf>,
+}
 
 pub fn rm(sh: &mut Shell, args: Arguments) -> Result<()> {
-    let matches = App::new("rm")
-        .setting(AppSettings::DisableVersion)
-        .arg(Arg::with_name("path")
-            .required(true)
-            .multiple(true)
-        )
-        .arg(Arg::with_name("r").short("r"))
-        .arg(Arg::with_name("f").short("f"))
-        .get_matches_from_safe(args)?;
+    let args = Args::try_parse_from(args)?;
 
-    let recursive = matches.occurrences_of("r") > 0;
-
-    for path in matches.values_of("path").unwrap() {
+    for path in &args.paths {
         debug!("rm: {:?}", path);
 
-        let result = if recursive {
+        let result = if args.recursive {
             fs::remove_dir_all(path)
         } else {
             fs::remove_file(path)

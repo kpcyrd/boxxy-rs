@@ -1,27 +1,26 @@
-use clap::{App, Arg, AppSettings};
+use clap::Parser;
 use crate::{Shell, Arguments};
 use crate::errors::*;
 use std::fs;
+use std::path::PathBuf;
+
+#[derive(Parser)]
+#[clap(name = "mkdir")]
+struct Args {
+    /// Create parent directories too
+    #[clap(short, long)]
+    parents: bool,
+    /// Directory to create
+    directory: PathBuf,
+}
 
 pub fn mkdir(_sh: &mut Shell, args: Arguments) -> Result<()> {
-    let matches = App::new("mkdir")
-        .setting(AppSettings::DisableVersion)
-        .arg(Arg::with_name("directory")
-            .required(true)
-        )
-        .arg(Arg::with_name("parents")
-            .short("p")
-            .long("parents")
-        )
-        .get_matches_from_safe(args)?;
+    let args = Args::try_parse_from(args)?;
 
-    let directory = matches.value_of("directory").unwrap();
-    let parents = matches.occurrences_of("parents") > 0;
-
-    if parents {
-        fs::create_dir_all(directory)?;
+    if args.parents {
+        fs::create_dir_all(args.directory)?;
     } else {
-        fs::create_dir(directory)?;
+        fs::create_dir(args.directory)?;
     }
 
     Ok(())

@@ -10,7 +10,7 @@ pub fn jit(sh: &mut Shell, args: Arguments) -> Result<()> {
         .about("Execute shell code")
         .arg(Arg::with_name("hex")
             .help("shellcode is hex encoded")
-            .short("x")
+            .short('x')
         )
         .arg(Arg::with_name("shellcode")
             .help("base64 encoded shellcode")

@@ -14,7 +14,7 @@ pub fn revshell(sh: &mut Shell, args: Arguments) -> Result<()> {
         .setting(AppSettings::DisableVersion)
         .about("Create a tls connection and connect the interface to it")
         .arg(Arg::with_name("loop")
-            .short("l")
+            .short('l')
             .long("loop")
             .help("Explicitly execute main loop again")
         )

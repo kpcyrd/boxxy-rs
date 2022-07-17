@@ -116,7 +116,7 @@ impl Interface {
 
     #[cfg(feature="readline")]
     pub fn fancy(toolbox: Arc<Mutex<Toolbox>>) -> Interface {
-        let mut rl = Editor::new();
+        let mut rl = Editor::new().expect("Failed to create readline editor");
         let c = CmdCompleter::new(toolbox);
         rl.set_helper(Some(c));
 
