@@ -1,13 +1,13 @@
 [package]
 name = "boxxy"
-version = "0.12.1"
+version = "0.13.0"
 description = "Linkable sandbox explorer"
 authors = ["kpcyrd <git@rxv.cc>"]
 license = "LGPL-3.0"
 repository = "https://github.com/kpcyrd/boxxy-rs"
 categories = ["command-line-interface", "development-tools::debugging"]
 readme = "README.md"
-edition = "2018"
+edition = "2021"
 
 [lib]
 crate-type = ["lib", "cdylib", "staticlib"]
