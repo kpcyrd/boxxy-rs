@@ -10,7 +10,7 @@ pub fn mount(sh: &mut Shell, args: Arguments) -> Result<()> {
         )
         .arg(Arg::with_name("dest"))
         .arg(Arg::with_name("fstype")
-            .short("t")
+            .short('t')
             .takes_value(true)
         )
         .get_matches_from_safe(args)?;
