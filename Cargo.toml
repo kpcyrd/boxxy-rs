@@ -65,7 +65,7 @@ pledge = "0.4"
 
 [dev-dependencies]
 env_logger = "0.9"
-elf = "0.0.10"
+elf = "0.7.0"
 ctrlc = "3.1.0"
 rustls = "0.20"
 sha2 = "0.10"
