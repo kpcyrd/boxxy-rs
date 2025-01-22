@@ -4,7 +4,7 @@ use crate::completer::CmdCompleter;
 #[cfg(feature="network")]
 use crate::crypto::OwnedTlsStream;
 #[cfg(feature="readline")]
-use rustyline::{self, Editor};
+use rustyline::{self, Editor, history::DefaultHistory};
 
 use std::fs::File;
 use std::sync::{Arc, Mutex};
@@ -92,7 +92,7 @@ impl<T> W for T where T: Write + Debug {}
 #[derive(Debug)]
 pub enum Interface {
     #[cfg(feature="readline")]
-    Fancy((io::Stdin, io::Stdout, Editor<CmdCompleter>)),
+    Fancy((io::Stdin, io::Stdout, Editor<CmdCompleter,  DefaultHistory>)),
     Stdio(BufStream<RW<io::Stdin, io::Stdout>>),
     File(BufStream<RW<File, File>>),
     RWPair(BufStream<RW<Box<dyn R>, Box<dyn W>>>),
@@ -178,10 +178,12 @@ impl Interface {
     }
 
     #[cfg(feature="readline")]
-    pub fn add_history_entry(&mut self, line: &str) {
+    pub fn add_history_entry(&mut self, line: &str) -> Result<(), PromptError> {
         if let Interface::Fancy(ref mut x) = *self {
-            x.2.add_history_entry(line);
+            x.2.add_history_entry(line)?;
         }
+
+        Ok(())
     }
 
     #[cfg(unix)]

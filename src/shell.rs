@@ -439,7 +439,7 @@ impl Shell {
         match readline {
             Ok(line) => {
                 #[cfg(feature="readline")]
-                self.ui.add_history_entry(line.as_ref());
+                self.ui.add_history_entry(line.as_ref()).map_err(|_| ())?;
                 Ok(parse_line(&line))
             },
             Err(_) => Err(()),
