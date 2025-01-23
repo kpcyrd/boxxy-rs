@@ -4,18 +4,17 @@ use crate::busybox;
 use crate::ctrl::{Interface, PromptError};
 use crate::errors::*;
 pub use crate::ffi::ForeignCommand;
+use std::collections::HashMap;
 use std::io;
 use std::io::prelude::*;
 use std::sync::Arc;
 use std::sync::Mutex;
-use std::collections::HashMap;
 
 #[cfg(unix)]
 use std::os::unix::io::RawFd;
 
 #[cfg(unix)]
 use crate::ffi::daemonize;
-
 
 #[derive(Clone)]
 pub enum Command {
@@ -25,12 +24,11 @@ pub enum Command {
 
 pub type NativeCommand = fn(&mut Shell, Vec<String>) -> Result<(), Error>;
 
-
 impl Command {
-    pub fn run(&self, mut sh: &mut Shell, args: Vec<String>) -> Result<(), Error> {
+    pub fn run(&self, sh: &mut Shell, args: Vec<String>) -> Result<(), Error> {
         use self::Command::*;
         match *self {
-            Native(ref func)  => func(&mut sh, args),
+            Native(ref func) => func(sh, args),
             Foreign(ref func) => func.run(args),
         }
     }
@@ -47,7 +45,6 @@ impl Command {
     }
 }
 
-
 impl From<NativeCommand> for Command {
     fn from(cmd: NativeCommand) -> Command {
         Command::Native(cmd)
@@ -59,7 +56,6 @@ impl From<ForeignCommand> for Command {
         Command::Foreign(cmd)
     }
 }
-
 
 /// The set of registered commands.
 #[derive(Default)]
@@ -89,60 +85,56 @@ impl Toolbox {
     pub fn new() -> Toolbox {
         let mut toolbox = Toolbox::empty();
         toolbox.insert_many_native(vec![
-            ("cat"          , busybox::cat),
-            ("cd"           , busybox::cd),
-            ("downgrade"    , busybox::downgrade),
-            ("echo"         , busybox::echo),
-            ("exec"         , busybox::exec),
-            ("grep"         , busybox::grep),
-            ("help"         , busybox::help),
-            ("ls"           , busybox::ls),
-            ("mkdir"        , busybox::mkdir),
-            ("pwd"          , busybox::pwd),
-            ("rm"           , busybox::rm),
+            ("cat", busybox::cat),
+            ("cd", busybox::cd),
+            ("downgrade", busybox::downgrade),
+            ("echo", busybox::echo),
+            ("exec", busybox::exec),
+            ("grep", busybox::grep),
+            ("help", busybox::help),
+            ("ls", busybox::ls),
+            ("mkdir", busybox::mkdir),
+            ("pwd", busybox::pwd),
+            ("rm", busybox::rm),
         ]);
 
         #[cfg(unix)]
         toolbox.insert_many_native(vec![
-            ("chmod"        , busybox::chmod),
-            ("chown"        , busybox::chown),
-            ("chroot"       , busybox::chroot),
-            ("fchdir"       , busybox::fchdir),
-            ("fds"          , busybox::fds),
-            ("jit"          , busybox::jit),
-            ("id"           , busybox::id),
-            ("setgroups"    , busybox::setgroups),
-            ("setgid"       , busybox::setgid),
-            ("setuid"       , busybox::setuid),
-            ("seteuid"      , busybox::seteuid),
+            ("chmod", busybox::chmod),
+            ("chown", busybox::chown),
+            ("chroot", busybox::chroot),
+            ("fchdir", busybox::fchdir),
+            ("fds", busybox::fds),
+            ("jit", busybox::jit),
+            ("id", busybox::id),
+            ("setgroups", busybox::setgroups),
+            ("setgid", busybox::setgid),
+            ("setuid", busybox::setuid),
+            ("seteuid", busybox::seteuid),
         ]);
 
-        #[cfg(target_os="linux")]
+        #[cfg(target_os = "linux")]
         toolbox.insert_many_native(vec![
-            ("caps"         , busybox::caps),
-            ("mount"        , busybox::mount),
-            ("keepcaps"     , busybox::keepcaps),
-            ("setresgid"    , busybox::setresgid),
-            ("setresuid"    , busybox::setresuid),
-            ("setreuid"     , busybox::setreuid),
+            ("caps", busybox::caps),
+            ("mount", busybox::mount),
+            ("keepcaps", busybox::keepcaps),
+            ("setresgid", busybox::setresgid),
+            ("setresuid", busybox::setresuid),
+            ("setreuid", busybox::setreuid),
         ]);
 
-        #[cfg(target_os="openbsd")]
-        toolbox.insert_many_native(vec![
-            ("pledge"       , busybox::pledge),
-        ]);
+        #[cfg(target_os = "openbsd")]
+        toolbox.insert_many_native(vec![("pledge", busybox::pledge)]);
 
-        #[cfg(feature="archives")]
-        toolbox.insert_many_native(vec![
-            ("tar"          , busybox::tar),
-        ]);
+        #[cfg(feature = "archives")]
+        toolbox.insert_many_native(vec![("tar", busybox::tar)]);
 
-        #[cfg(feature="network")]
+        #[cfg(feature = "network")]
         toolbox.insert_many_native(vec![
-            ("curl"         , busybox::curl),
-            ("revshell"     , busybox::revshell),
+            ("curl", busybox::curl),
+            ("revshell", busybox::revshell),
             #[cfg(unix)]
-            ("ipcshell"     , busybox::ipcshell),
+            ("ipcshell", busybox::ipcshell),
         ]);
 
         toolbox
@@ -171,10 +163,7 @@ impl Toolbox {
     /// ```
     #[inline]
     pub fn keys(&self) -> Vec<String> {
-        self.0
-            .keys()
-            .map(|x| x.to_owned())
-            .collect()
+        self.0.keys().cloned().collect()
     }
 
     /// Insert a command into the toolbox.
@@ -290,7 +279,6 @@ impl Toolbox {
     }
 }
 
-
 /// The struct that keeps track of the user interface.
 pub struct Shell {
     ui: Interface,
@@ -330,10 +318,7 @@ impl Shell {
 
         let ui = Interface::default(&toolbox);
 
-        Shell {
-            ui,
-            toolbox,
-        }
+        Shell { ui, toolbox }
     }
 
     /// Replace the readline interface with a plain stdin/stdout interface.
@@ -349,10 +334,10 @@ impl Shell {
     #[inline]
     pub fn downgrade(&mut self) {
         match self.ui {
-            #[cfg(feature="readline")]
+            #[cfg(feature = "readline")]
             Interface::Fancy(_) => {
                 self.ui = Interface::stdio();
-            },
+            }
             _ => shprintln!(self, "[-] interface is already downgraded"),
         }
     }
@@ -421,10 +406,7 @@ impl Shell {
     fn daemon_clone(&self) -> Shell {
         let toolbox = self.toolbox.clone();
         let ui = Interface::default(&toolbox);
-        Shell {
-            ui,
-            toolbox,
-        }
+        Shell { ui, toolbox }
     }
 
     #[inline]
@@ -438,10 +420,10 @@ impl Shell {
 
         match readline {
             Ok(line) => {
-                #[cfg(feature="readline")]
+                #[cfg(feature = "readline")]
                 self.ui.add_history_entry(line.as_ref()).map_err(|_| ())?;
                 Ok(parse_line(&line))
-            },
+            }
             Err(_) => Err(()),
         }
     }
@@ -475,7 +457,6 @@ impl Shell {
     }
 }
 
-
 #[inline]
 fn tokenize(line: &str) -> Vec<String> {
     let mut cmd = Vec::new();
@@ -495,13 +476,13 @@ fn tokenize(line: &str) -> Vec<String> {
                     cmd.push(token);
                     token = String::new();
                 }
-            },
+            }
             '\\' => {
                 escape = true;
-            },
+            }
             x => {
                 token.push(x);
-            },
+            }
         }
     }
 
@@ -512,14 +493,12 @@ fn tokenize(line: &str) -> Vec<String> {
     cmd
 }
 
-
 #[derive(Debug, PartialEq)]
 pub struct InputCmd {
     prog: String,
     args: Vec<String>,
     bg: bool,
 }
-
 
 #[inline]
 fn parse_line(line: &str) -> Option<InputCmd> {
@@ -549,20 +528,18 @@ fn parse_line(line: &str) -> Option<InputCmd> {
     }
 }
 
-
 #[inline]
 fn is_comment(line: &str) -> bool {
     for x in line.chars() {
         match x {
             '#' => return true,
             ' ' => (),
-            _   => return false,
+            _ => return false,
         }
     }
 
     false
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -592,21 +569,24 @@ mod tests {
 
     #[test]
     fn test_is_comment() {
-        assert_eq!(false, is_comment("hello world"));
-        assert_eq!(true, is_comment("#hello world"));
-        assert_eq!(false, is_comment("hello #world"));
-        assert_eq!(false, is_comment(""));
-        assert_eq!(false, is_comment("  "));
-        assert_eq!(true, is_comment("  # x"));
+        assert!(!is_comment("hello world"));
+        assert!(is_comment("#hello world"));
+        assert!(!is_comment("hello #world"));
+        assert!(!is_comment(""));
+        assert!(!is_comment("  "));
+        assert!(is_comment("  # x"));
     }
 
     #[test]
     fn test_bg() {
         let cmd = parse_line("foo bar &");
-        assert_eq!(Some(InputCmd {
-            prog: "foo".to_string(),
-            args: vec!["foo".to_string(), "bar".to_string()],
-            bg: true,
-        }), cmd);
+        assert_eq!(
+            Some(InputCmd {
+                prog: "foo".to_string(),
+                args: vec!["foo".to_string(), "bar".to_string()],
+                bg: true,
+            }),
+            cmd
+        );
     }
 }

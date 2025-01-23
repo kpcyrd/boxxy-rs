@@ -13,7 +13,7 @@ pub fn cd(_sh: &mut Shell, args: Arguments) -> Result<()> {
 
     let path = matches.value_of("path").unwrap();
 
-    env::set_current_dir(&path)?;
+    env::set_current_dir(path)?;
 
     Ok(())
 }

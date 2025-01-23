@@ -1,5 +1,5 @@
 use crate::errors::*;
-use libc::{uid_t, gid_t};
+use libc::{gid_t, uid_t};
 
 /// Get the real uid, effective uid and saved uid.
 ///
@@ -21,7 +21,6 @@ pub fn getresuid() -> Result<(uid_t, uid_t, uid_t)> {
     }
 }
 
-
 /// Get the real gid, effective gid and saved gid.
 ///
 /// ```
@@ -41,7 +40,6 @@ pub fn getresgid() -> Result<(gid_t, gid_t, gid_t)> {
         Ok((rgid, egid, sgid))
     }
 }
-
 
 /// Set the supplemental groups.
 ///

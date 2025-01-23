@@ -36,11 +36,12 @@
 
 #![warn(unused_extern_crates)]
 
-#[macro_use] mod macros;
+#[macro_use]
+mod macros;
 pub mod busybox;
-#[cfg(feature="readline")]
+#[cfg(feature = "readline")]
 pub mod completer;
-#[cfg(feature="network")]
+#[cfg(feature = "network")]
 pub mod crypto;
 pub mod ctrl;
 pub mod errors;
@@ -48,9 +49,9 @@ pub mod ffi;
 pub mod shell;
 
 pub use crate::ctrl::Interface;
-pub use errors::{Result, Error};
+pub use crate::shell::{Command, ForeignCommand, NativeCommand};
 pub use crate::shell::{Shell, Toolbox};
-pub use crate::shell::{Command, NativeCommand, ForeignCommand};
+pub use errors::{Error, Result};
 
 /// Arguments passed to builtin commands
 pub type Arguments = Vec<String>;

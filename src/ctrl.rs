@@ -1,32 +1,30 @@
-use crate::Toolbox;
-#[cfg(feature="readline")]
+#[cfg(feature = "readline")]
 use crate::completer::CmdCompleter;
-#[cfg(feature="network")]
+#[cfg(feature = "network")]
 use crate::crypto::OwnedTlsStream;
-#[cfg(feature="readline")]
-use rustyline::{self, Editor, history::DefaultHistory};
-
-use std::fs::File;
-use std::sync::{Arc, Mutex};
+use crate::Toolbox;
 use bufstream::BufStream;
+#[cfg(feature = "readline")]
+use rustyline::{self, history::DefaultHistory, Editor};
+use std::fmt::Debug;
+use std::fs::File;
 use std::io;
 use std::io::prelude::*;
-use std::fmt::Debug;
-#[cfg(all(unix, feature="network"))]
-use std::os::unix::net::UnixStream;
 #[cfg(unix)]
-use std::os::unix::io::{RawFd, AsRawFd};
-
+use std::os::unix::io::{AsRawFd, RawFd};
+#[cfg(all(unix, feature = "network"))]
+use std::os::unix::net::UnixStream;
+use std::sync::{Arc, Mutex};
 
 #[derive(Debug)]
 pub enum PromptError {
     Io(io::Error),
     Eof,
-    #[cfg(feature="readline")]
+    #[cfg(feature = "readline")]
     Other(rustyline::error::ReadlineError),
 }
 
-#[cfg(feature="readline")]
+#[cfg(feature = "readline")]
 impl From<rustyline::error::ReadlineError> for PromptError {
     fn from(err: rustyline::error::ReadlineError) -> PromptError {
         use rustyline::error::ReadlineError;
@@ -44,13 +42,12 @@ impl From<io::Error> for PromptError {
     }
 }
 
-
 /// Wraps a Read object and a Write object into a Read/Write object.
 #[derive(Debug)]
 pub struct RW<R: Read, W: Write>(R, W);
 
 #[cfg(unix)]
-impl<R: Read+AsRawFd, W: Write+AsRawFd> RW<R, W> {
+impl<R: Read + AsRawFd, W: Write + AsRawFd> RW<R, W> {
     #[inline]
     pub fn as_raw_fd(&self) -> (RawFd, RawFd) {
         let r = self.0.as_raw_fd();
@@ -78,27 +75,25 @@ impl<R: Read, W: Write> Write for RW<R, W> {
     }
 }
 
-
 pub trait R: Read + Debug {}
 impl<T> R for T where T: Read + Debug {}
 
 pub trait W: Write + Debug {}
 impl<T> W for T where T: Write + Debug {}
 
-
 /// The interface that the [`Shell`] uses.
 ///
 /// [`Shell`]: ../shell/struct.Shell.html
 #[derive(Debug)]
 pub enum Interface {
-    #[cfg(feature="readline")]
-    Fancy((io::Stdin, io::Stdout, Editor<CmdCompleter,  DefaultHistory>)),
+    #[cfg(feature = "readline")]
+    Fancy((io::Stdin, io::Stdout, Editor<CmdCompleter, DefaultHistory>)),
     Stdio(BufStream<RW<io::Stdin, io::Stdout>>),
     File(BufStream<RW<File, File>>),
     RWPair(BufStream<RW<Box<dyn R>, Box<dyn W>>>),
-    #[cfg(feature="network")]
+    #[cfg(feature = "network")]
     Tls(Box<BufStream<OwnedTlsStream>>),
-    #[cfg(all(unix, feature="network"))]
+    #[cfg(all(unix, feature = "network"))]
     Ipc(BufStream<UnixStream>),
     Dummy(Vec<u8>),
 }
@@ -106,15 +101,15 @@ pub enum Interface {
 impl Interface {
     #[allow(unused_variables)]
     pub fn default(toolbox: &Arc<Mutex<Toolbox>>) -> Interface {
-        #[cfg(feature="readline")]
+        #[cfg(feature = "readline")]
         let ui = Interface::fancy(toolbox.clone());
-        #[cfg(not(feature="readline"))]
+        #[cfg(not(feature = "readline"))]
         let ui = Interface::stdio();
 
         ui
     }
 
-    #[cfg(feature="readline")]
+    #[cfg(feature = "readline")]
     pub fn fancy(toolbox: Arc<Mutex<Toolbox>>) -> Interface {
         let mut rl = Editor::new().expect("Failed to create readline editor");
         let c = CmdCompleter::new(toolbox);
@@ -143,7 +138,10 @@ impl Interface {
         Interface::Dummy(Vec::new())
     }
 
-    pub fn readline_raw<RW: BufRead + Write>(prompt: &str, x: &mut RW) -> Result<String, PromptError> {
+    pub fn readline_raw<RW: BufRead + Write>(
+        prompt: &str,
+        x: &mut RW,
+    ) -> Result<String, PromptError> {
         x.write_all(prompt.as_bytes())?;
         x.flush()?;
 
@@ -151,7 +149,7 @@ impl Interface {
         x.read_line(&mut buf)?;
 
         if buf.is_empty() {
-            return Err(PromptError::Eof)
+            return Err(PromptError::Eof);
         }
 
         let buf = buf.trim_end().to_owned();
@@ -161,23 +159,23 @@ impl Interface {
 
     pub fn readline(&mut self, prompt: &str) -> Result<String, PromptError> {
         match *self {
-            #[cfg(feature="readline")]
+            #[cfg(feature = "readline")]
             Interface::Fancy(ref mut x) => {
                 let buf = x.2.readline(prompt)?;
                 Ok(buf)
-            },
+            }
             Interface::Stdio(ref mut x) => Self::readline_raw(prompt, x),
             Interface::File(ref mut x) => Self::readline_raw(prompt, x),
             Interface::RWPair(ref mut x) => Self::readline_raw(prompt, x),
-            #[cfg(feature="network")]
+            #[cfg(feature = "network")]
             Interface::Tls(ref mut x) => Self::readline_raw(prompt, x),
-            #[cfg(all(unix, feature="network"))]
+            #[cfg(all(unix, feature = "network"))]
             Interface::Ipc(ref mut x) => Self::readline_raw(prompt, x),
             Interface::Dummy(ref mut _x) => unimplemented!(),
         }
     }
 
-    #[cfg(feature="readline")]
+    #[cfg(feature = "readline")]
     pub fn add_history_entry(&mut self, line: &str) -> Result<(), PromptError> {
         if let Interface::Fancy(ref mut x) = *self {
             x.2.add_history_entry(line)?;
@@ -191,25 +189,25 @@ impl Interface {
     pub fn pipe(&mut self) -> Option<(RawFd, RawFd, RawFd)> {
         match *self {
             // this connects the real stdio automatically
-            #[cfg(feature="readline")]
+            #[cfg(feature = "readline")]
             Interface::Fancy(_) => None,
             Interface::Stdio(ref ui) => {
                 let (r, w) = ui.get_ref().as_raw_fd();
                 Some((r, w, w))
-            },
+            }
             Interface::File(ref ui) => {
                 let (r, w) = ui.get_ref().as_raw_fd();
                 Some((r, w, w))
-            },
+            }
             Interface::RWPair(_) => None,
             // NOTE: not supported yet
-            #[cfg(feature="network")]
+            #[cfg(feature = "network")]
             Interface::Tls(_) => None,
-            #[cfg(all(unix, feature="network"))]
+            #[cfg(all(unix, feature = "network"))]
             Interface::Ipc(ref ui) => {
                 let fd = ui.get_ref().as_raw_fd();
                 Some((fd, fd, fd))
-            },
+            }
             Interface::Dummy(_) => None,
         }
     }
@@ -218,14 +216,14 @@ impl Interface {
 impl Read for Interface {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         match *self {
-            #[cfg(feature="readline")]
+            #[cfg(feature = "readline")]
             Interface::Fancy(ref mut x) => x.0.read(buf),
             Interface::Stdio(ref mut x) => x.read(buf),
             Interface::File(ref mut x) => x.read(buf),
             Interface::RWPair(ref mut x) => x.read(buf),
-            #[cfg(feature="network")]
+            #[cfg(feature = "network")]
             Interface::Tls(ref mut x) => x.read(buf),
-            #[cfg(all(unix, feature="network"))]
+            #[cfg(all(unix, feature = "network"))]
             Interface::Ipc(ref mut x) => x.read(buf),
             Interface::Dummy(ref mut _x) => unimplemented!(),
         }
@@ -235,14 +233,14 @@ impl Read for Interface {
 impl Write for Interface {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         match *self {
-            #[cfg(feature="readline")]
+            #[cfg(feature = "readline")]
             Interface::Fancy(ref mut x) => x.1.write(buf),
             Interface::Stdio(ref mut x) => x.write(buf),
             Interface::File(ref mut x) => x.write(buf),
             Interface::RWPair(ref mut x) => x.write(buf),
-            #[cfg(feature="network")]
+            #[cfg(feature = "network")]
             Interface::Tls(ref mut x) => x.write(buf),
-            #[cfg(all(unix, feature="network"))]
+            #[cfg(all(unix, feature = "network"))]
             Interface::Ipc(ref mut x) => x.write(buf),
             Interface::Dummy(ref mut x) => x.write(buf),
         }
@@ -250,14 +248,14 @@ impl Write for Interface {
 
     fn flush(&mut self) -> io::Result<()> {
         match *self {
-            #[cfg(feature="readline")]
+            #[cfg(feature = "readline")]
             Interface::Fancy(ref mut x) => x.1.flush(),
             Interface::Stdio(ref mut x) => x.flush(),
             Interface::File(ref mut x) => x.flush(),
             Interface::RWPair(ref mut x) => x.flush(),
-            #[cfg(feature="network")]
+            #[cfg(feature = "network")]
             Interface::Tls(ref mut x) => x.flush(),
-            #[cfg(all(unix, feature="network"))]
+            #[cfg(all(unix, feature = "network"))]
             Interface::Ipc(ref mut x) => x.flush(),
             Interface::Dummy(ref mut x) => x.flush(),
         }

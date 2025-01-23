@@ -102,7 +102,7 @@ pub fn ls(sh: &mut Shell, args: Arguments) -> Result<()> {
     for path in paths {
         debug!("ls: {:?}", path);
 
-        match fs::read_dir(&path) {
+        match fs::read_dir(path) {
             Ok(entries) => {
                 for entry in entries {
                     let entry = entry.unwrap();

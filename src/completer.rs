@@ -1,12 +1,10 @@
-use rustyline::{self, Context};
+use crate::shell::Toolbox;
 use rustyline::completion::Completer;
 use rustyline::highlight::Highlighter;
 use rustyline::hint::Hinter;
-
-use crate::shell::Toolbox;
+use rustyline::{self, Context};
 use std::borrow::Cow::{self, Borrowed};
 use std::sync::{Arc, Mutex};
-
 
 pub struct CmdCompleter(Arc<Mutex<Toolbox>>);
 
@@ -26,12 +24,19 @@ impl Completer for CmdCompleter {
     type Candidate = String;
 
     #[inline]
-    fn complete(&self, line: &str, pos: usize, _ctx: &Context<'_>) -> rustyline::Result<(usize, Vec<String>)> {
+    fn complete(
+        &self,
+        line: &str,
+        pos: usize,
+        _ctx: &Context<'_>,
+    ) -> rustyline::Result<(usize, Vec<String>)> {
         if line.contains(' ') || line.len() != pos {
             return Ok((0, vec![]));
         }
 
-        let results: Vec<String> = self.commands().iter()
+        let results: Vec<String> = self
+            .commands()
+            .iter()
             .filter(|x| x.starts_with(line))
             .map(|x| x.clone() + " ")
             .collect();
