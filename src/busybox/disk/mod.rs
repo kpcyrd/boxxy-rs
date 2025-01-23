@@ -19,14 +19,14 @@ import_cmd!(fds);
 
 import_cmd!(grep);
 
-#[cfg(feature="archives")]
+#[cfg(feature = "archives")]
 import_cmd!(tar);
 
 import_cmd!(ls);
 
 import_cmd!(mkdir);
 
-#[cfg(target_os="linux")]
+#[cfg(target_os = "linux")]
 import_cmd!(mount);
 
 import_cmd!(pwd);

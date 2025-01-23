@@ -9,21 +9,21 @@ macro_rules! import_cmd {
 
 /// Disk related commands
 pub mod disk;
+/// Meta commands
+pub mod meta;
+/// Network related commands
+#[cfg(feature = "network")]
+pub mod network;
 #[cfg(unix)]
 /// Privilege related commands
 pub mod privs;
 /// Process related commands
 pub mod procs;
-/// Meta commands
-pub mod meta;
-/// Network related commands
-#[cfg(feature="network")]
-pub mod network;
 
 pub use self::disk::*;
+pub use self::meta::*;
+#[cfg(feature = "network")]
+pub use self::network::*;
 #[cfg(unix)]
 pub use self::privs::*;
 pub use self::procs::*;
-pub use self::meta::*;
-#[cfg(feature="network")]
-pub use self::network::*;

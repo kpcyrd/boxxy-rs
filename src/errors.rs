@@ -1,5 +1,5 @@
-pub use log::{debug, info, warn, error, trace};
-pub use anyhow::{Error, Context, Result, anyhow, bail};
+pub use anyhow::{anyhow, bail, Context, Error, Result};
+pub use log::{debug, error, info, trace, warn};
 
 #[inline]
 pub fn errno() -> Error {

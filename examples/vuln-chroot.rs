@@ -1,5 +1,4 @@
 #![cfg_attr(not(unix), allow(unused_imports, dead_code))]
-extern crate boxxy;
 
 use std::env;
 use std::ffi::CString;
@@ -31,10 +30,10 @@ fn main() {
 
     let jail = "jails/empty/";
     println!("[*] creating jail at {:?}", jail);
-    std::fs::create_dir_all(&jail).unwrap();
+    std::fs::create_dir_all(jail).unwrap();
 
     println!("[*] starting chroot...");
-    chroot(&jail).unwrap();
+    chroot(jail).unwrap();
 
     env::set_current_dir("/").unwrap();
 

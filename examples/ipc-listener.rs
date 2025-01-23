@@ -1,22 +1,17 @@
 #![cfg_attr(not(unix), allow(unused_imports, dead_code))]
-extern crate libc;
-extern crate ctrlc;
-extern crate clap;
 
-use std::io;
+use clap::{App, AppSettings, Arg};
 use std::fs;
-use std::thread;
-use std::time::Instant;
-use std::process::Command;
-use std::sync::{Arc, Mutex};
+use std::io;
 use std::io::prelude::*;
 #[cfg(unix)]
-use std::os::unix::net::{UnixStream, UnixListener};
+use std::os::unix::io::{FromRawFd, IntoRawFd, RawFd};
 #[cfg(unix)]
-use std::os::unix::io::{RawFd, IntoRawFd, FromRawFd};
-
-use clap::{App, Arg, AppSettings};
-
+use std::os::unix::net::{UnixListener, UnixStream};
+use std::process::Command;
+use std::sync::{Arc, Mutex};
+use std::thread;
+use std::time::Instant;
 
 #[inline]
 #[cfg(unix)]
@@ -56,13 +51,12 @@ fn ctrlc(exit: Arc<Mutex<Instant>>) {
 fn main() {
     let matches = App::new("ipc-listener")
         .setting(AppSettings::DisableVersion)
-        .arg(Arg::with_name("path")
-            .help("unix domain socket path")
-            .required(true)
+        .arg(
+            Arg::with_name("path")
+                .help("unix domain socket path")
+                .required(true),
         )
-        .arg(Arg::with_name("script")
-            .help("execute this script after bind")
-        )
+        .arg(Arg::with_name("script").help("execute this script after bind"))
         .get_matches();
 
     let path = matches.value_of("path").unwrap();
@@ -74,15 +68,17 @@ fn main() {
     let exit = Arc::new(Mutex::new(Instant::now()));
     ctrlc::set_handler(move || {
         ctrlc(exit.clone());
-    }).expect("Error setting Ctrl-C handler");
+    })
+    .expect("Error setting Ctrl-C handler");
 
     eprintln!("[*] listening on {:?}...", path);
 
     if let Some(script) = script {
         eprintln!("[*] running {:?}", script);
         Command::new("sh")
-            .args(&["-c", script])
-            .status().expect("exec");
+            .args(["-c", script])
+            .status()
+            .expect("exec");
     }
 
     let (stream, addr) = listener.accept().expect("accept");

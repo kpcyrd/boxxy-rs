@@ -1,13 +1,13 @@
 use rustls::ClientConnection;
-use std::io::prelude::*;
 use std::io;
+use std::io::prelude::*;
 use std::net::TcpStream;
 
 pub mod danger {
     use crate::errors::*;
-    use rustls::{Certificate, ServerName};
     use rustls::client::ServerCertVerified;
-    use sha2::{Sha256, Digest};
+    use rustls::{Certificate, ServerName};
+    use sha2::{Digest, Sha256};
     use std::time::SystemTime;
 
     pub struct PinnedCertificateVerification {}
@@ -33,7 +33,7 @@ pub mod danger {
                 let mut h = Sha256::new();
                 h.update(&cert.0);
                 h.finalize().to_vec()
-            },
+            }
             _ => bail!("unknown hash alog"),
         };
 
@@ -52,7 +52,7 @@ pub mod danger {
             server_name: &ServerName,
             _scts: &mut dyn Iterator<Item = &[u8]>,
             _ocsp_response: &[u8],
-            _now: SystemTime
+            _now: SystemTime,
         ) -> Result<ServerCertVerified, rustls::Error> {
             if verify_fingerprint(server_name, &end_entity).is_ok() {
                 Ok(ServerCertVerified::assertion())
@@ -62,7 +62,6 @@ pub mod danger {
         }
     }
 }
-
 
 #[derive(Debug)]
 pub struct OwnedTlsStream {

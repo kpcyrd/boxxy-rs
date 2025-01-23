@@ -56,7 +56,7 @@ pub fn caps(sh: &mut Shell, args: Arguments) -> Result<()> {
     let set = matches.occurrences_of("set") > 0;
 
     let capabilities = match matches.values_of("capabilities") {
-        Some(caps) => caps.map(|c| Capability::from_str(c))
+        Some(caps) => caps.map(Capability::from_str)
                           .collect::<result::Result<_, _>>()?,
         None => HashSet::new(),
     };

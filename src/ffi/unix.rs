@@ -1,6 +1,6 @@
 use crate::errors::*;
 use crate::shell;
-use libc::{uid_t, gid_t};
+use libc::{gid_t, uid_t};
 use std::process;
 
 pub fn getuid() -> Result<uid_t> {
@@ -23,18 +23,15 @@ pub fn setuid(uid: uid_t) -> Result<()> {
     }
 }
 
-
 pub fn getgid() -> Result<uid_t> {
     let gid = unsafe { libc::getgid() };
     Ok(gid)
 }
 
-
 pub fn getegid() -> Result<uid_t> {
     let egid = unsafe { libc::getegid() };
     Ok(egid)
 }
-
 
 /// Get the supplemental groups.
 ///
@@ -51,10 +48,8 @@ pub fn getgroups() -> Result<Vec<gid_t>> {
     if ret < 0 {
         Err(errno())
     } else {
-        let groups = (0..ret)
-            .map(|i| unsafe { gids.get_unchecked(i as usize) }.to_owned())
-            .collect();
-        Ok(groups)
+        unsafe { gids.set_len(ret as usize) };
+        Ok(gids)
     }
 }
 
@@ -77,12 +72,11 @@ pub fn waitpid(pid: i32) {
     unsafe { libc::waitpid(pid, ::std::ptr::null_mut(), 0) };
 }
 
-
 pub fn daemonize(mut shell: shell::Shell, func: shell::Command, args: Vec<String>) -> Result<()> {
     match fork()? {
         Fork::Parent(pid) => {
             unsafe { libc::waitpid(pid, ::std::ptr::null_mut(), 0) };
-        },
+        }
         Fork::Child => {
             let ret = unsafe { libc::setsid() };
             if ret < 0 {
